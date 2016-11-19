@@ -49,38 +49,6 @@
 #include <sstream>
 #include <vector>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "pch.h"
-#include <Kore/IO/FileReader.h>
-#include <Kore/Graphics/Graphics.h>
-#include <Kore/Graphics/Shader.h>
-#include <Kore/Input/Keyboard.h>
-#include <Kore/Input/Mouse.h>
-#include <Kore/Audio/Audio.h>
-#include <Kore/Audio/Mixer.h>
-#include <Kore/Audio/Sound.h>
-#include <Kore/Audio/SoundStream.h>
-#include <Kore/Math/Random.h>
-#include <Kore/System.h>
-#include <Kore/Log.h>
-#include <Kore/Threads/Thread.h>
-
-#include "debug.h"
-
-#include "../V8/include/libplatform/libplatform.h"
-#include "../V8/include/v8.h"
-#include <v8-inspector.h>
-
-#include <stdio.h>
-#include <fstream>
-#include <map>
-#include <sstream>
-#include <string>
-#include <vector>
-
 using namespace v8;
 
 #ifdef SYS_OSX
