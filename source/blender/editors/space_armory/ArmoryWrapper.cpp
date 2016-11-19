@@ -49,6 +49,38 @@
 #include <sstream>
 #include <vector>
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "pch.h"
+#include <Kore/IO/FileReader.h>
+#include <Kore/Graphics/Graphics.h>
+#include <Kore/Graphics/Shader.h>
+#include <Kore/Input/Keyboard.h>
+#include <Kore/Input/Mouse.h>
+#include <Kore/Audio/Audio.h>
+#include <Kore/Audio/Mixer.h>
+#include <Kore/Audio/Sound.h>
+#include <Kore/Audio/SoundStream.h>
+#include <Kore/Math/Random.h>
+#include <Kore/System.h>
+#include <Kore/Log.h>
+#include <Kore/Threads/Thread.h>
+
+#include "debug.h"
+
+#include "../V8/include/libplatform/libplatform.h"
+#include "../V8/include/v8.h"
+#include <v8-inspector.h>
+
+#include <stdio.h>
+#include <fstream>
+#include <map>
+#include <sstream>
+#include <string>
+#include <vector>
+
 using namespace v8;
 
 #ifdef SYS_OSX
@@ -79,7 +111,7 @@ namespace {
 		String::Utf8Value value(arg);
 		Kore::log(Kore::Info, "%s", *value);
 	}
-
+	
 	void graphics_clear(const v8::FunctionCallbackInfo<v8::Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		int flags = args[0]->ToInt32()->Value();
@@ -102,7 +134,7 @@ namespace {
 		Local<Function> func = Local<Function>::Cast(arg);
 		keyboardDownFunction.Reset(isolate, func);
 	}
-
+	
 	void krom_set_keyboard_up_callback(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Local<Value> arg = args[0];
@@ -166,16 +198,16 @@ namespace {
 	
 	Kore::VertexData convertVertexData(int num) {
 		switch (num) {
-			case 0:
-				return Kore::Float1VertexData;
-			case 1:
-				return Kore::Float2VertexData;
-            case 2:
-				return Kore::Float3VertexData;
-			case 3:
-				return Kore::Float4VertexData;
-			case 4:
-				return Kore::Float4x4VertexData;
+		case 0:
+			return Kore::Float1VertexData;
+		case 1:
+			return Kore::Float2VertexData;
+		case 2:
+			return Kore::Float3VertexData;
+		case 3:
+			return Kore::Float4VertexData;
+		case 4:
+			return Kore::Float4x4VertexData;
 		}
 		return Kore::Float1VertexData;
 	}
@@ -202,7 +234,7 @@ namespace {
 			structure.add(name, convertVertexData(data));
 		}
 		
-		obj->SetInternalField(0, External::New(isolate, new Kore::VertexBuffer(args[0]->Int32Value(), structure)));
+		obj->SetInternalField(0, External::New(isolate, new Kore::VertexBuffer(args[0]->Int32Value(), structure, args[2]->Int32Value())));
 		args.GetReturnValue().Set(obj);
 	}
 	
@@ -230,7 +262,18 @@ namespace {
 		Local<External> field = Local<External>::Cast(args[0]->ToObject()->GetInternalField(0));
 		Kore::VertexBuffer* buffer = (Kore::VertexBuffer*)field->Value();
 		Kore::Graphics::setVertexBuffer(*buffer);
-        
+	}
+
+	void krom_set_vertexbuffers(const FunctionCallbackInfo<Value>& args) {
+		HandleScope scope(args.GetIsolate());
+		Kore::VertexBuffer* vertexBuffers[4] = { nullptr, nullptr, nullptr, nullptr };
+		int count = args[4]->ToInt32()->Value();
+		for (int32_t i = 0; i < count; ++i) {
+			Local<External> field = Local<External>::Cast(args[i]->ToObject()->GetInternalField(0));
+			Kore::VertexBuffer* buffer = (Kore::VertexBuffer*)field->Value();
+			vertexBuffers[i] = buffer;
+		}		
+		Kore::Graphics::setVertexBuffers(vertexBuffers, count);
 	}
 	
 	void krom_draw_indexed_vertices(const FunctionCallbackInfo<Value>& args) {
@@ -239,6 +282,15 @@ namespace {
 		int count = args[1]->ToInt32()->Value();
 		if (count < 0) Kore::Graphics::drawIndexedVertices();
 		else Kore::Graphics::drawIndexedVertices(start, count);
+	}
+
+	void krom_draw_indexed_vertices_instanced(const FunctionCallbackInfo<Value>& args) {
+		HandleScope scope(args.GetIsolate());
+		int instanceCount = args[0]->ToInt32()->Value();
+		int start = args[1]->ToInt32()->Value();
+		int count = args[2]->ToInt32()->Value();
+		if (count < 0) Kore::Graphics::drawIndexedVerticesInstanced(instanceCount);
+		else Kore::Graphics::drawIndexedVerticesInstanced(instanceCount, start, count);
 	}
 	
 	std::string replace(std::string str, char a, char b) {
@@ -277,13 +329,58 @@ namespace {
 		obj->Set(String::NewFromUtf8(isolate, "name"), args[1]);
 		args.GetReturnValue().Set(obj);
 	}
+
+	void krom_create_geometry_shader(const FunctionCallbackInfo<Value>& args) {
+		HandleScope scope(args.GetIsolate());
+		Local<ArrayBuffer> buffer = Local<ArrayBuffer>::Cast(args[0]);
+		ArrayBuffer::Contents content = buffer->Externalize();
+		Kore::Shader* shader = new Kore::Shader(content.Data(), (int)content.ByteLength(), Kore::GeometryShader);
+		
+		Local<ObjectTemplate> templ = ObjectTemplate::New(isolate);
+		templ->SetInternalFieldCount(1);
+		
+		Local<Object> obj = templ->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
+		obj->SetInternalField(0, External::New(isolate, shader));
+		obj->Set(String::NewFromUtf8(isolate, "name"), args[1]);
+		args.GetReturnValue().Set(obj);
+	}
+
+	void krom_create_tessellation_control_shader(const FunctionCallbackInfo<Value>& args) {
+		HandleScope scope(args.GetIsolate());
+		Local<ArrayBuffer> buffer = Local<ArrayBuffer>::Cast(args[0]);
+		ArrayBuffer::Contents content = buffer->Externalize();
+		Kore::Shader* shader = new Kore::Shader(content.Data(), (int)content.ByteLength(), Kore::TessellationControlShader);
+		
+		Local<ObjectTemplate> templ = ObjectTemplate::New(isolate);
+		templ->SetInternalFieldCount(1);
+		
+		Local<Object> obj = templ->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
+		obj->SetInternalField(0, External::New(isolate, shader));
+		obj->Set(String::NewFromUtf8(isolate, "name"), args[1]);
+		args.GetReturnValue().Set(obj);
+	}
+
+	void krom_create_tessellation_evaluation_shader(const FunctionCallbackInfo<Value>& args) {
+		HandleScope scope(args.GetIsolate());
+		Local<ArrayBuffer> buffer = Local<ArrayBuffer>::Cast(args[0]);
+		ArrayBuffer::Contents content = buffer->Externalize();
+		Kore::Shader* shader = new Kore::Shader(content.Data(), (int)content.ByteLength(), Kore::TessellationEvaluationShader);
+		
+		Local<ObjectTemplate> templ = ObjectTemplate::New(isolate);
+		templ->SetInternalFieldCount(1);
+		
+		Local<Object> obj = templ->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
+		obj->SetInternalField(0, External::New(isolate, shader));
+		obj->Set(String::NewFromUtf8(isolate, "name"), args[1]);
+		args.GetReturnValue().Set(obj);
+	}
 	
 	void krom_create_program(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Kore::Program* program = new Kore::Program();
 		
 		Local<ObjectTemplate> templ = ObjectTemplate::New(isolate);
-		templ->SetInternalFieldCount(4);
+		templ->SetInternalFieldCount(8);
 		
 		Local<Object> obj = templ->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
 		obj->SetInternalField(0, External::New(isolate, program));
@@ -291,19 +388,41 @@ namespace {
 	}
 	
 	void recompileProgram(Local<Object> projobj) {
-		Local<External> structfield = Local<External>::Cast(projobj->GetInternalField(1));
-		Kore::VertexStructure* structure = (Kore::VertexStructure*)structfield->Value();
+		Local<External> structsfield = Local<External>::Cast(projobj->GetInternalField(1));
+		Kore::VertexStructure** structures = (Kore::VertexStructure**)structsfield->Value();
 		
-		Local<External> vsfield = Local<External>::Cast(projobj->GetInternalField(2));
+		Local<External> sizefield = Local<External>::Cast(projobj->GetInternalField(2));
+		int32_t size = sizefield->ToInt32()->Value();
+
+		Local<External> vsfield = Local<External>::Cast(projobj->GetInternalField(3));
 		Kore::Shader* vs = (Kore::Shader*)vsfield->Value();
 		
-		Local<External> fsfield = Local<External>::Cast(projobj->GetInternalField(3));
+		Local<External> fsfield = Local<External>::Cast(projobj->GetInternalField(4));
 		Kore::Shader* fs = (Kore::Shader*)fsfield->Value();
-		
+
 		Kore::Program* program = new Kore::Program();
 		program->setVertexShader(vs);
 		program->setFragmentShader(fs);
-		program->link(*structure);
+
+		Local<External> gsfield = Local<External>::Cast(projobj->GetInternalField(5));
+		if (!gsfield->IsNull() && !gsfield->IsUndefined()) {
+			Kore::Shader* gs = (Kore::Shader*)gsfield->Value();
+			program->setGeometryShader(gs);
+		}
+
+		Local<External> tcsfield = Local<External>::Cast(projobj->GetInternalField(6));
+		if (!tcsfield->IsNull() && !tcsfield->IsUndefined()) {
+			Kore::Shader* tcs = (Kore::Shader*)tcsfield->Value();
+			program->setTessellationControlShader(tcs);
+		}
+
+		Local<External> tesfield = Local<External>::Cast(projobj->GetInternalField(7));
+		if (!tesfield->IsNull() && !tesfield->IsUndefined()) {
+			Kore::Shader* tes = (Kore::Shader*)tesfield->Value();
+			program->setTessellationEvaluationShader(tes);
+		}
+		
+		program->link(structures, size);
 		
 		projobj->SetInternalField(0, External::New(isolate, program));
 	}
@@ -316,35 +435,66 @@ namespace {
 		Local<External> progfield = Local<External>::Cast(progobj->GetInternalField(0));
 		Kore::Program* program = (Kore::Program*)progfield->Value();
 		
-		Local<Object> jsstructure = args[1]->ToObject();
-		int32_t length = jsstructure->Get(String::NewFromUtf8(isolate, "length"))->ToInt32()->Value();
-		Kore::VertexStructure* structure = new Kore::VertexStructure;
-		for (int32_t i = 0; i < length; ++i) {
-			Local<Object> element = jsstructure->Get(i)->ToObject();
-			Local<Value> str = element->Get(String::NewFromUtf8(isolate, "name"));
-			String::Utf8Value utf8_value(str);
-			Local<Object> dataobj = element->Get(String::NewFromUtf8(isolate, "data"))->ToObject();
-			int32_t data = dataobj->Get(1)->ToInt32()->Value();
-			char* name = new char[32]; // TODO
-			strcpy(name, *utf8_value);
-			structure->add(name, convertVertexData(data));
+		Kore::VertexStructure s0, s1, s2, s3;
+		Kore::VertexStructure* structures[4] = { &s0, &s1, &s2, &s3 };
+
+		int32_t size = args[5]->ToObject()->ToInt32()->Value();
+		for (int32_t i1 = 0; i1 < size; ++i1) {
+			Local<Object> jsstructure = args[i1 + 1]->ToObject();
+			int32_t length = jsstructure->Get(String::NewFromUtf8(isolate, "length"))->ToInt32()->Value();
+			for (int32_t i2 = 0; i2 < length; ++i2) {
+				Local<Object> element = jsstructure->Get(i2)->ToObject();
+				Local<Value> str = element->Get(String::NewFromUtf8(isolate, "name"));
+				String::Utf8Value utf8_value(str);
+				Local<Object> dataobj = element->Get(String::NewFromUtf8(isolate, "data"))->ToObject();
+				int32_t data = dataobj->Get(1)->ToInt32()->Value();
+				char* name = new char[32]; // TODO
+				strcpy(name, *utf8_value);
+				structures[i1]->add(name, convertVertexData(data));
+			}
 		}
 		
-		progobj->SetInternalField(1, External::New(isolate, structure));
+		progobj->SetInternalField(1, External::New(isolate, structures));
+		progobj->SetInternalField(2, External::New(isolate, &size));
 		
-		Local<External> vsfield = Local<External>::Cast(args[2]->ToObject()->GetInternalField(0));
+		Local<External> vsfield = Local<External>::Cast(args[6]->ToObject()->GetInternalField(0));
 		Kore::Shader* vertexShader = (Kore::Shader*)vsfield->Value();
-		progobj->SetInternalField(2, External::New(isolate, vertexShader));
-		progobj->Set(String::NewFromUtf8(isolate, "vsname"), args[2]->ToObject()->Get(String::NewFromUtf8(isolate, "name")));
+		progobj->SetInternalField(3, External::New(isolate, vertexShader));
+		progobj->Set(String::NewFromUtf8(isolate, "vsname"), args[6]->ToObject()->Get(String::NewFromUtf8(isolate, "name")));
 		
-		Local<External> fsfield = Local<External>::Cast(args[3]->ToObject()->GetInternalField(0));
+		Local<External> fsfield = Local<External>::Cast(args[7]->ToObject()->GetInternalField(0));
 		Kore::Shader* fragmentShader = (Kore::Shader*)fsfield->Value();
-		progobj->SetInternalField(3, External::New(isolate, fragmentShader));
-		progobj->Set(String::NewFromUtf8(isolate, "fsname"), args[3]->ToObject()->Get(String::NewFromUtf8(isolate, "name")));
+		progobj->SetInternalField(4, External::New(isolate, fragmentShader));
+		progobj->Set(String::NewFromUtf8(isolate, "fsname"), args[7]->ToObject()->Get(String::NewFromUtf8(isolate, "name")));
 		
 		program->setVertexShader(vertexShader);
 		program->setFragmentShader(fragmentShader);
-		program->link(*structure);
+
+		if (!args[8]->IsNull() && !args[8]->IsUndefined()) {
+			Local<External> gsfield = Local<External>::Cast(args[8]->ToObject()->GetInternalField(0));
+			Kore::Shader* geometryShader = (Kore::Shader*)gsfield->Value();
+			progobj->SetInternalField(5, External::New(isolate, geometryShader));
+			progobj->Set(String::NewFromUtf8(isolate, "gsname"), args[8]->ToObject()->Get(String::NewFromUtf8(isolate, "name")));
+			program->setGeometryShader(geometryShader);
+		}
+
+		if (!args[9]->IsNull() && !args[9]->IsUndefined()) {
+			Local<External> tcsfield = Local<External>::Cast(args[9]->ToObject()->GetInternalField(0));
+			Kore::Shader* tessellationControlShader = (Kore::Shader*)tcsfield->Value();
+			progobj->SetInternalField(6, External::New(isolate, tessellationControlShader));
+			progobj->Set(String::NewFromUtf8(isolate, "tcsname"), args[9]->ToObject()->Get(String::NewFromUtf8(isolate, "name")));
+			program->setTessellationControlShader(tessellationControlShader);
+		}
+
+		if (!args[10]->IsNull() && !args[10]->IsUndefined()) {
+			Local<External> tesfield = Local<External>::Cast(args[10]->ToObject()->GetInternalField(0));
+			Kore::Shader* tessellationEvaluationShader = (Kore::Shader*)tesfield->Value();
+			progobj->SetInternalField(7, External::New(isolate, tessellationEvaluationShader));
+			progobj->Set(String::NewFromUtf8(isolate, "tesname"), args[10]->ToObject()->Get(String::NewFromUtf8(isolate, "name")));
+			program->setTessellationEvaluationShader(tessellationEvaluationShader);
+		}
+
+		program->link(structures, size);
 	}
 
 	std::string shadersdir;
@@ -363,33 +513,78 @@ namespace {
 		
 		bool shaderChanged = false;
 		
-		// if (shaderChanges[*vsname]) {
-		// 	shaderChanged = true;
-		// 	Kore::log(Kore::Info, "Reloading shader %s.", *vsname);
-		// 	std::string filename = shaderFileNames[*vsname];
-		// 	std::ifstream input((shadersdir + "/" + filename).c_str(), std::ios::binary );
-		// 	std::vector<char> buffer((std::istreambuf_iterator<char>(input)), (std::istreambuf_iterator<char>()));
-		// 	Kore::Shader* vertexShader = new Kore::Shader(buffer.data(), (int)buffer.size(), Kore::VertexShader);
-		// 	progobj->SetInternalField(2, External::New(isolate, vertexShader));
-		// 	shaderChanges[*vsname] = false;
-		// }
+		if (shaderChanges[*vsname]) {
+			shaderChanged = true;
+			Kore::log(Kore::Info, "Reloading shader %s.", *vsname);
+			std::string filename = shaderFileNames[*vsname];
+			std::ifstream input((shadersdir + "/" + filename).c_str(), std::ios::binary );
+			std::vector<char> buffer((std::istreambuf_iterator<char>(input)), (std::istreambuf_iterator<char>()));
+			Kore::Shader* vertexShader = new Kore::Shader(buffer.data(), (int)buffer.size(), Kore::VertexShader);
+			progobj->SetInternalField(3, External::New(isolate, vertexShader));
+			shaderChanges[*vsname] = false;
+		}
 		
-		// if (shaderChanges[*fsname]) {
-		// 	shaderChanged = true;
-		// 	Kore::log(Kore::Info, "Reloading shader %s.", *fsname);
-		// 	std::string filename = shaderFileNames[*fsname];
-		// 	std::ifstream input((shadersdir + "/" + filename).c_str(), std::ios::binary );
-		// 	std::vector<char> buffer((std::istreambuf_iterator<char>(input)), (std::istreambuf_iterator<char>()));
-		// 	Kore::Shader* fragmentShader = new Kore::Shader(buffer.data(), (int)buffer.size(), Kore::FragmentShader);
-		// 	progobj->SetInternalField(3, External::New(isolate, fragmentShader));
-		// 	shaderChanges[*fsname] = false;
-		// }
+		if (shaderChanges[*fsname]) {
+			shaderChanged = true;
+			Kore::log(Kore::Info, "Reloading shader %s.", *fsname);
+			std::string filename = shaderFileNames[*fsname];
+			std::ifstream input((shadersdir + "/" + filename).c_str(), std::ios::binary );
+			std::vector<char> buffer((std::istreambuf_iterator<char>(input)), (std::istreambuf_iterator<char>()));
+			Kore::Shader* fragmentShader = new Kore::Shader(buffer.data(), (int)buffer.size(), Kore::FragmentShader);
+			progobj->SetInternalField(4, External::New(isolate, fragmentShader));
+			shaderChanges[*fsname] = false;
+		}
+
+		Local<Value> gsnameobj = progobj->Get(String::NewFromUtf8(isolate, "gsname"));
+		if (!gsnameobj->IsNull() && !gsnameobj->IsUndefined()) {
+			String::Utf8Value gsname(gsnameobj);
+			if (shaderChanges[*gsname]) {
+				shaderChanged = true;
+				Kore::log(Kore::Info, "Reloading shader %s.", *gsname);
+				std::string filename = shaderFileNames[*gsname];
+				std::ifstream input((shadersdir + "/" + filename).c_str(), std::ios::binary );
+				std::vector<char> buffer((std::istreambuf_iterator<char>(input)), (std::istreambuf_iterator<char>()));
+				Kore::Shader* geometryShader = new Kore::Shader(buffer.data(), (int)buffer.size(), Kore::GeometryShader);
+				progobj->SetInternalField(5, External::New(isolate, geometryShader));
+				shaderChanges[*gsname] = false;
+			}
+		}
+
+		Local<Value> tcsnameobj = progobj->Get(String::NewFromUtf8(isolate, "tcsname"));
+		if (!tcsnameobj->IsNull() && !tcsnameobj->IsUndefined()) {
+			String::Utf8Value tcsname(tcsnameobj);
+			if (shaderChanges[*tcsname]) {
+				shaderChanged = true;
+				Kore::log(Kore::Info, "Reloading shader %s.", *tcsname);
+				std::string filename = shaderFileNames[*tcsname];
+				std::ifstream input((shadersdir + "/" + filename).c_str(), std::ios::binary );
+				std::vector<char> buffer((std::istreambuf_iterator<char>(input)), (std::istreambuf_iterator<char>()));
+				Kore::Shader* tessellationControlShader = new Kore::Shader(buffer.data(), (int)buffer.size(), Kore::TessellationControlShader);
+				progobj->SetInternalField(6, External::New(isolate, tessellationControlShader));
+				shaderChanges[*tcsname] = false;
+			}
+		}
+
+		Local<Value> tesnameobj = progobj->Get(String::NewFromUtf8(isolate, "tesname"));
+		if (!tesnameobj->IsNull() && !tesnameobj->IsUndefined()) {
+			String::Utf8Value tesname(tesnameobj);
+			if (shaderChanges[*tesname]) {
+				shaderChanged = true;
+				Kore::log(Kore::Info, "Reloading shader %s.", *tesname);
+				std::string filename = shaderFileNames[*tesname];
+				std::ifstream input((shadersdir + "/" + filename).c_str(), std::ios::binary );
+				std::vector<char> buffer((std::istreambuf_iterator<char>(input)), (std::istreambuf_iterator<char>()));
+				Kore::Shader* tessellationEvaluationShader = new Kore::Shader(buffer.data(), (int)buffer.size(), Kore::TessellationEvaluationShader);
+				progobj->SetInternalField(7, External::New(isolate, tessellationEvaluationShader));
+				shaderChanges[*tesname] = false;
+			}
+		}
 		
-		// if (shaderChanged) {
-		// 	recompileProgram(progobj);
-		// 	Local<External> progfield = Local<External>::Cast(progobj->GetInternalField(0));
-		// 	program = (Kore::Program*)progfield->Value();
-		// }
+		if (shaderChanged) {
+			recompileProgram(progobj);
+			Local<External> progfield = Local<External>::Cast(progobj->GetInternalField(0));
+			program = (Kore::Program*)progfield->Value();
+		}
 		
 		program->set();
 	}
@@ -397,7 +592,8 @@ namespace {
 	void krom_load_image(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		String::Utf8Value utf8_value(args[0]);
-		Kore::Texture* texture = new Kore::Texture(*utf8_value);
+		bool readable = args[1]->ToBoolean()->Value();
+		Kore::Texture* texture = new Kore::Texture(*utf8_value, readable);
 		
 		Local<ObjectTemplate> templ = ObjectTemplate::New(isolate);
 		templ->SetInternalFieldCount(1);
@@ -499,6 +695,22 @@ namespace {
 			Local<External> rtfield = Local<External>::Cast(rt->ToObject()->GetInternalField(0));
 			Kore::RenderTarget* renderTarget = (Kore::RenderTarget*)rtfield->Value();
 			renderTarget->useColorAsTexture(*unit);
+		}
+	}
+
+	void krom_set_texture_depth(const FunctionCallbackInfo<Value>& args) {
+		HandleScope scope(args.GetIsolate());
+		Local<External> unitfield = Local<External>::Cast(args[0]->ToObject()->GetInternalField(0));
+		Kore::TextureUnit* unit = (Kore::TextureUnit*)unitfield->Value();
+		
+		if (args[1]->IsNull() || args[1]->IsUndefined()) return;
+
+		Local<Object> image = args[1]->ToObject();
+		Local<Value> rt = image->Get(String::NewFromUtf8(isolate, "renderTarget_"));
+		if (rt->IsObject()) {
+			Local<External> rtfield = Local<External>::Cast(rt->ToObject()->GetInternalField(0));
+			Kore::RenderTarget* renderTarget = (Kore::RenderTarget*)rtfield->Value();
+			renderTarget->useDepthAsTexture(*unit);
 		}
 	}
 
@@ -657,19 +869,19 @@ namespace {
 	void krom_window_width(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		int windowId = args[0]->ToInt32()->Value();
-        args.GetReturnValue().Set(Int32::New(isolate, Kore::System::windowWidth(windowId)));
+		args.GetReturnValue().Set(Int32::New(isolate, Kore::System::windowWidth(windowId)));
 	}
 
 	void krom_window_height(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		int windowId = args[0]->ToInt32()->Value();
-        args.GetReturnValue().Set(Int32::New(isolate, Kore::System::windowHeight(windowId)));
+		args.GetReturnValue().Set(Int32::New(isolate, Kore::System::windowHeight(windowId)));
 	}
 
 	void krom_screen_dpi(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		int windowId = args[0]->ToInt32()->Value();
-        args.GetReturnValue().Set(Int32::New(isolate, Kore::System::screenDpi()));
+		args.GetReturnValue().Set(Int32::New(isolate, Kore::System::screenDpi()));
 	}
 	
 	void krom_create_render_target(const FunctionCallbackInfo<Value>& args) {
@@ -723,6 +935,30 @@ namespace {
 		Kore::Texture* texture = (Kore::Texture*)field->Value();
 		texture->generateMipmaps(args[0]->ToInt32()->Value());
 	}
+
+	void krom_set_mipmaps(const FunctionCallbackInfo<Value>& args) {
+		HandleScope scope(args.GetIsolate());
+		Local<External> field = Local<External>::Cast(args[0]->ToObject()->GetInternalField(0));
+		Kore::Texture* texture = (Kore::Texture*)field->Value();
+		
+		Local<Object> jsarray = args[1]->ToObject();
+		int32_t length = jsarray->Get(String::NewFromUtf8(isolate, "length"))->ToInt32()->Value();
+		for (int32_t i = 0; i < length; ++i) {
+			Local<Object> mipmapobj = jsarray->Get(i)->ToObject()->Get(String::NewFromUtf8(isolate, "texture_"))->ToObject();
+			Local<External> mipmapfield = Local<External>::Cast(mipmapobj->GetInternalField(0));
+			Kore::Texture* mipmap = (Kore::Texture*)mipmapfield->Value();
+			texture->setMipmap(mipmap, i + 1);
+		}
+	}
+
+	void krom_set_depth_stencil_from(const FunctionCallbackInfo<Value>& args) {
+		HandleScope scope(args.GetIsolate());
+		Local<External> targetfield = Local<External>::Cast(args[0]->ToObject()->GetInternalField(0));
+		Kore::RenderTarget* renderTarget = (Kore::RenderTarget*)targetfield->Value();
+		Local<External> sourcefield = Local<External>::Cast(args[1]->ToObject()->GetInternalField(0));
+		Kore::RenderTarget* sourceTarget = (Kore::RenderTarget*)sourcefield->Value();
+		renderTarget->setDepthStencilFrom(sourceTarget);
+	}
 	
 	void krom_viewport(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
@@ -733,6 +969,21 @@ namespace {
 		int h = args[3]->ToInt32()->Int32Value();
 
 		Kore::Graphics::viewport(x, y, w, h);
+	}
+
+	void krom_scissor(const FunctionCallbackInfo<Value>& args) {
+		HandleScope scope(args.GetIsolate());
+
+		int x = args[0]->ToInt32()->Int32Value();
+		int y = args[1]->ToInt32()->Int32Value();
+		int w = args[2]->ToInt32()->Int32Value();
+		int h = args[3]->ToInt32()->Int32Value();
+
+		Kore::Graphics::scissor(x, y, w, h);
+	}
+
+	void krom_disable_scissor(const FunctionCallbackInfo<Value>& args) {
+		Kore::Graphics::disableScissor();
 	}
 
 	void krom_set_depth_mode(const FunctionCallbackInfo<Value>& args) {
@@ -881,7 +1132,21 @@ namespace {
 			Local<Object> obj = args[0]->ToObject()->Get(String::NewFromUtf8(isolate, "renderTarget_"))->ToObject();
 			Local<External> rtfield = Local<External>::Cast(obj->GetInternalField(0));
 			Kore::RenderTarget* renderTarget = (Kore::RenderTarget*)rtfield->Value();
-			Kore::Graphics::setRenderTarget(renderTarget, 0, 0);
+			
+			if (args[1]->IsNull() || args[1]->IsUndefined()) {
+				Kore::Graphics::setRenderTarget(renderTarget, 0, 0);
+			}
+			else {
+				Local<Object> jsarray = args[1]->ToObject();
+				int32_t length = jsarray->Get(String::NewFromUtf8(isolate, "length"))->ToInt32()->Value();
+				Kore::Graphics::setRenderTarget(renderTarget, 0, length);
+				for (int32_t i = 0; i < length; ++i) {
+					Local<Object> artobj = jsarray->Get(i)->ToObject()->Get(String::NewFromUtf8(isolate, "renderTarget_"))->ToObject();
+					Local<External> artfield = Local<External>::Cast(artobj->GetInternalField(0));
+					Kore::RenderTarget* art = (Kore::RenderTarget*)artfield->Value();
+					Kore::Graphics::setRenderTarget(art, i + 1, length);
+				}
+			}
 		}
 	}
 	
@@ -930,9 +1195,14 @@ namespace {
 		krom->Set(String::NewFromUtf8(isolate, "createVertexBuffer"), FunctionTemplate::New(isolate, krom_create_vertexbuffer));
 		krom->Set(String::NewFromUtf8(isolate, "setVertices"), FunctionTemplate::New(isolate, krom_set_vertices));
 		krom->Set(String::NewFromUtf8(isolate, "setVertexBuffer"), FunctionTemplate::New(isolate, krom_set_vertexbuffer));
+		krom->Set(String::NewFromUtf8(isolate, "setVertexBuffers"), FunctionTemplate::New(isolate, krom_set_vertexbuffers));
 		krom->Set(String::NewFromUtf8(isolate, "drawIndexedVertices"), FunctionTemplate::New(isolate, krom_draw_indexed_vertices));
+		krom->Set(String::NewFromUtf8(isolate, "drawIndexedVerticesInstanced"), FunctionTemplate::New(isolate, krom_draw_indexed_vertices_instanced));
 		krom->Set(String::NewFromUtf8(isolate, "createVertexShader"), FunctionTemplate::New(isolate, krom_create_vertex_shader));
 		krom->Set(String::NewFromUtf8(isolate, "createFragmentShader"), FunctionTemplate::New(isolate, krom_create_fragment_shader));
+		krom->Set(String::NewFromUtf8(isolate, "createGeometryShader"), FunctionTemplate::New(isolate, krom_create_geometry_shader));
+		krom->Set(String::NewFromUtf8(isolate, "createTessellationControlShader"), FunctionTemplate::New(isolate, krom_create_tessellation_control_shader));
+		krom->Set(String::NewFromUtf8(isolate, "createTessellationEvaluationShader"), FunctionTemplate::New(isolate, krom_create_tessellation_evaluation_shader));
 		krom->Set(String::NewFromUtf8(isolate, "createProgram"), FunctionTemplate::New(isolate, krom_create_program));
 		krom->Set(String::NewFromUtf8(isolate, "compileProgram"), FunctionTemplate::New(isolate, krom_compile_program));
 		krom->Set(String::NewFromUtf8(isolate, "setProgram"), FunctionTemplate::New(isolate, krom_set_program));
@@ -942,6 +1212,7 @@ namespace {
 		krom->Set(String::NewFromUtf8(isolate, "getConstantLocation"), FunctionTemplate::New(isolate, krom_get_constant_location));
 		krom->Set(String::NewFromUtf8(isolate, "getTextureUnit"), FunctionTemplate::New(isolate, krom_get_texture_unit));
 		krom->Set(String::NewFromUtf8(isolate, "setTexture"), FunctionTemplate::New(isolate, krom_set_texture));
+		krom->Set(String::NewFromUtf8(isolate, "setTextureDepth"), FunctionTemplate::New(isolate, krom_set_texture_depth));
 		krom->Set(String::NewFromUtf8(isolate, "setTextureParameters"), FunctionTemplate::New(isolate, krom_set_texture_parameters));
 		krom->Set(String::NewFromUtf8(isolate, "setBool"), FunctionTemplate::New(isolate, krom_set_bool));
 		krom->Set(String::NewFromUtf8(isolate, "setInt"), FunctionTemplate::New(isolate, krom_set_int));
@@ -959,7 +1230,11 @@ namespace {
 		krom->Set(String::NewFromUtf8(isolate, "createTexture"), FunctionTemplate::New(isolate, krom_create_texture));
 		krom->Set(String::NewFromUtf8(isolate, "unlockTexture"), FunctionTemplate::New(isolate, krom_unlock_texture));
 		krom->Set(String::NewFromUtf8(isolate, "generateMipmaps"), FunctionTemplate::New(isolate, krom_generate_mipmaps));
+		krom->Set(String::NewFromUtf8(isolate, "setMipmaps"), FunctionTemplate::New(isolate, krom_set_mipmaps));
+		krom->Set(String::NewFromUtf8(isolate, "setDepthStencilFrom"), FunctionTemplate::New(isolate, krom_set_depth_stencil_from));
 		krom->Set(String::NewFromUtf8(isolate, "viewport"), FunctionTemplate::New(isolate, krom_viewport));
+		krom->Set(String::NewFromUtf8(isolate, "scissor"), FunctionTemplate::New(isolate, krom_scissor));
+		krom->Set(String::NewFromUtf8(isolate, "disableScissor"), FunctionTemplate::New(isolate, krom_disable_scissor));
 		krom->Set(String::NewFromUtf8(isolate, "setDepthMode"), FunctionTemplate::New(isolate, krom_set_depth_mode));
 		krom->Set(String::NewFromUtf8(isolate, "setCullMode"), FunctionTemplate::New(isolate, krom_set_cull_mode));
 		krom->Set(String::NewFromUtf8(isolate, "setStencilParameters"), FunctionTemplate::New(isolate, krom_set_stencil_parameters));
