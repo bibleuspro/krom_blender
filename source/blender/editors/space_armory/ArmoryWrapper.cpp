@@ -1560,40 +1560,6 @@ int kore(int argc, char** argv) { return 0; }
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 char armory_url[512];
 char armory_jssource[512];
 char armory_console[512];
@@ -1620,8 +1586,8 @@ void armoryShow(int x, int y, int w, int h) {
 	Kore::System::setup();
 	Kore::WindowOptions options;
 	options.title = "Krom";
-	options.width = w;
-	options.height = h + 180;
+	options.width = w + 2;
+	options.height = h + 190;
 	options.targetDisplay = 0;
 	options.mode = Kore::WindowModeWindow;
 	options.rendererOptions.depthBufferBits = 16;
@@ -1650,7 +1616,7 @@ void armoryShow(int x, int y, int w, int h) {
 
 	// parseCode();
 	Kore::threadsInit();
-	// startDebugger(isolate);
+	//startDebugger(isolate);
 
 	startKrom(code);
 	// Kore::System::start();
@@ -1663,7 +1629,8 @@ void armoryExit() {
 }
 
 void armoryDraw() {
-	Kore::System::callback();
+	update();
+	//Kore::System::callback();
 	//Kore::System::handleMessages();
 }
 

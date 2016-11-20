@@ -115,6 +115,55 @@ static void armory_main_area_free(ARegion *ar)
 	armoryFree();
 }
 
+void armory_GPU_buffers_unbind(void)
+{
+	// TODO
+	//int i;
+	// if (GLStates & GPU_BUFFER_VERTEX_STATE)
+		glDisableClientState(GL_VERTEX_ARRAY);
+	// if (GLStates & GPU_BUFFER_NORMAL_STATE)
+		glDisableClientState(GL_NORMAL_ARRAY);
+	// if (GLStates & GPU_BUFFER_TEXCOORD_UNIT_0_STATE)
+		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	// if (GLStates & GPU_BUFFER_TEXCOORD_UNIT_2_STATE) {
+		glClientActiveTexture(GL_TEXTURE2);
+		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+		glClientActiveTexture(GL_TEXTURE0);
+	// }
+	// if (GLStates & GPU_BUFFER_COLOR_STATE)
+		glDisableClientState(GL_COLOR_ARRAY);
+	// if (GLStates & GPU_BUFFER_ELEMENT_STATE)
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	// GLStates &= ~(GPU_BUFFER_VERTEX_STATE | GPU_BUFFER_NORMAL_STATE |
+	              // GPU_BUFFER_TEXCOORD_UNIT_0_STATE | GPU_BUFFER_TEXCOORD_UNIT_2_STATE |
+	              // GPU_BUFFER_COLOR_STATE | GPU_BUFFER_ELEMENT_STATE);
+
+	// for (i = 0; i < MAX_GPU_ATTRIB_DATA; i++) {
+		// if (attribData[i].index != -1) {
+			// glDisableVertexAttribArray(attribData[i].index);
+		// }
+		// else
+			// break;
+	// }
+	// attribData[0].index = -1;
+
+	glUseProgram(0);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
+	glBindVertexArray(0);
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(2);
+	glDisableVertexAttribArray(3);
+	glDisableVertexAttribArray(4);
+	glDisableVertexAttribArray(5);
+	glDisableVertexAttribArray(6);
+	glDisableVertexAttribArray(7);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
 int lastmx = -1, lastmy = -1;
 int pressed = 0;
 static void armory_main_area_draw(const bContext *C, ARegion *ar)
@@ -141,19 +190,12 @@ static void armory_main_area_draw(const bContext *C, ARegion *ar)
 	// UI_view2d_scrollers_free(scrollers);
 
 
-
-
+	glPushAttrib(GL_TEXTURE_BIT | GL_DEPTH_BUFFER_BIT); // Fix drawBuffers & viewport depth
 
 	armoryDraw();
 
-	glUseProgram(0);
-	glDisableClientState(GL_VERTEX_ARRAY);
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_BLEND);
-	glDisable(GL_CULL_FACE);
-
-
-
+	glPopAttrib();
+	armory_GPU_buffers_unbind();
 
 	int x = ar->winrct.xmin;
 	int y = ar->winrct.ymin;

@@ -97,106 +97,106 @@ void Graphics::setup() {}
 #endif
 
 void Graphics::init(int windowId, int depthBufferBits, int stencilBufferBits) {
-#ifdef SYS_WINDOWS
-	HWND windowHandle = (HWND)System::windowHandle(windowId);
+// #ifdef SYS_WINDOWS
+	// HWND windowHandle = (HWND)System::windowHandle(windowId);
 
-#ifndef VR_RIFT
+// #ifndef VR_RIFT
 	// TODO (DK) use provided settings for depth/stencil buffer
 
-	PIXELFORMATDESCRIPTOR pfd = // pfd Tells Windows How We Want Things To Be
-	    {
-	        sizeof(PIXELFORMATDESCRIPTOR), // Size Of This Pixel Format Descriptor
-	        1,                             // Version Number
-	        PFD_DRAW_TO_WINDOW |           // Format Must Support Window
-	            PFD_SUPPORT_OPENGL |       // Format Must Support OpenGL
-	            PFD_DOUBLEBUFFER,          // Must Support Double Buffering
-	        PFD_TYPE_RGBA,                 // Request An RGBA Format
-	        32,                            // Select Our Color Depth
-	        0,
-	        0, 0, 0, 0, 0,     // Color Bits Ignored
-	        0,                 // No Alpha Buffer
-	        0,                 // Shift Bit Ignored
-	        0,                 // No Accumulation Buffer
-	        0, 0, 0, 0,        // Accumulation Bits Ignored
-	        depthBufferBits,   // 16Bit Z-Buffer (Depth Buffer)
-	        stencilBufferBits, // 8Bit Stencil Buffer
-	        0,                 // No Auxiliary Buffer
-	        PFD_MAIN_PLANE,    // Main Drawing Layer
-	        0,                 // Reserved
-	        0, 0, 0            // Layer Masks Ignored
-	    };
+// 	PIXELFORMATDESCRIPTOR pfd = // pfd Tells Windows How We Want Things To Be
+// 	    {
+// 	        sizeof(PIXELFORMATDESCRIPTOR), // Size Of This Pixel Format Descriptor
+// 	        1,                             // Version Number
+// 	        PFD_DRAW_TO_WINDOW |           // Format Must Support Window
+// 	            PFD_SUPPORT_OPENGL |       // Format Must Support OpenGL
+// 	            PFD_DOUBLEBUFFER,          // Must Support Double Buffering
+// 	        PFD_TYPE_RGBA,                 // Request An RGBA Format
+// 	        32,                            // Select Our Color Depth
+// 	        0,
+// 	        0, 0, 0, 0, 0,     // Color Bits Ignored
+// 	        0,                 // No Alpha Buffer
+// 	        0,                 // Shift Bit Ignored
+// 	        0,                 // No Accumulation Buffer
+// 	        0, 0, 0, 0,        // Accumulation Bits Ignored
+// 	        depthBufferBits,   // 16Bit Z-Buffer (Depth Buffer)
+// 	        stencilBufferBits, // 8Bit Stencil Buffer
+// 	        0,                 // No Auxiliary Buffer
+// 	        PFD_MAIN_PLANE,    // Main Drawing Layer
+// 	        0,                 // Reserved
+// 	        0, 0, 0            // Layer Masks Ignored
+// 	    };
 
-	deviceContexts[windowId] = GetDC(windowHandle);
-	GLuint pixelFormat = ChoosePixelFormat(deviceContexts[windowId], &pfd);
-	SetPixelFormat(deviceContexts[windowId], pixelFormat, &pfd);
-	HGLRC tempGlContext = wglCreateContext(deviceContexts[windowId]);
-	wglMakeCurrent(deviceContexts[windowId], tempGlContext);
-	Kore::System::currentDeviceId = windowId;
+// 	deviceContexts[windowId] = GetDC(windowHandle);
+// 	GLuint pixelFormat = ChoosePixelFormat(deviceContexts[windowId], &pfd);
+// 	SetPixelFormat(deviceContexts[windowId], pixelFormat, &pfd);
+// 	HGLRC tempGlContext = wglCreateContext(deviceContexts[windowId]);
+// 	wglMakeCurrent(deviceContexts[windowId], tempGlContext);
+// 	Kore::System::currentDeviceId = windowId;
 
-	// TODO (DK) make a Graphics::setup() (called from System::setup()) and call it there only once?
-	if (windowId == 0) {
-		glewInit();
-	}
+// 	// TODO (DK) make a Graphics::setup() (called from System::setup()) and call it there only once?
+// 	if (windowId == 0) {
+// 		glewInit();
+// 	}
 
-	if (wglewIsSupported("WGL_ARB_create_context") == 1) {
-		int attributes[] = {WGL_CONTEXT_MAJOR_VERSION_ARB,
-		                    4,
-		                    WGL_CONTEXT_MINOR_VERSION_ARB,
-		                    2,
-		                    WGL_CONTEXT_FLAGS_ARB,
-		                    WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
-		                    WGL_CONTEXT_PROFILE_MASK_ARB,
-		                    WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
-		                    0};
+// 	if (wglewIsSupported("WGL_ARB_create_context") == 1) {
+// 		int attributes[] = {WGL_CONTEXT_MAJOR_VERSION_ARB,
+// 		                    4,
+// 		                    WGL_CONTEXT_MINOR_VERSION_ARB,
+// 		                    2,
+// 		                    WGL_CONTEXT_FLAGS_ARB,
+// 		                    WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+// 		                    WGL_CONTEXT_PROFILE_MASK_ARB,
+// 		                    WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+// 		                    0};
 
-		glContexts[windowId] = wglCreateContextAttribsARB(deviceContexts[windowId], glContexts[0], attributes);
-		glCheckErrors();
-		wglMakeCurrent(nullptr, nullptr);
-		wglDeleteContext(tempGlContext);
-		wglMakeCurrent(deviceContexts[windowId], glContexts[windowId]);
-		glCheckErrors();
-	}
-	else {
-		glContexts[windowId] = tempGlContext;
-	}
+// 		glContexts[windowId] = wglCreateContextAttribsARB(deviceContexts[windowId], glContexts[0], attributes);
+// 		glCheckErrors();
+// 		wglMakeCurrent(nullptr, nullptr);
+// 		wglDeleteContext(tempGlContext);
+// 		wglMakeCurrent(deviceContexts[windowId], glContexts[windowId]);
+// 		glCheckErrors();
+// 	}
+// 	else {
+// 		glContexts[windowId] = tempGlContext;
+// 	}
 
-	ShowWindow(windowHandle, SW_SHOW);
-	SetForegroundWindow(windowHandle); // Slightly Higher Priority
-	SetFocus(windowHandle);            // Sets Keyboard Focus To The Window
-#else  /* #ifndef VR_RIFT */
-	deviceContexts[windowId] = GetDC(windowHandle);
-	glContexts[windowId] = wglGetCurrentContext();
-	glewInit();
-#endif /* #ifndef VR_RIFT */
-#endif /* #ifdef SYS_WINDOWS */
+// 	ShowWindow(windowHandle, SW_SHOW);
+// 	SetForegroundWindow(windowHandle); // Slightly Higher Priority
+// 	SetFocus(windowHandle);            // Sets Keyboard Focus To The Window
+// #else  /* #ifndef VR_RIFT */
+// 	deviceContexts[windowId] = GetDC(windowHandle);
+// 	glContexts[windowId] = wglGetCurrentContext();
+// 	glewInit();
+// #endif /* #ifndef VR_RIFT */
+// #endif /* #ifdef SYS_WINDOWS */
 
-#ifndef VR_RIFT
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	setRenderState(DepthTest, false);
-	glViewport(0, 0, System::windowWidth(windowId), System::windowHeight(windowId));
+// #ifndef VR_RIFT
+// 	glEnable(GL_BLEND);
+// 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+// 	setRenderState(DepthTest, false);
+// 	glViewport(0, 0, System::windowWidth(windowId), System::windowHeight(windowId));
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &originalFramebuffer[windowId]);
 
-	for (int i = 0; i < 32; ++i) {
-		minFilters[windowId][i] = LinearFilter;
-		mipFilters[windowId][i] = NoMipFilter;
-	}
-#endif
+// 	for (int i = 0; i < 32; ++i) {
+// 		minFilters[windowId][i] = LinearFilter;
+// 		mipFilters[windowId][i] = NoMipFilter;
+// 	}
+// #endif
 
-#ifdef SYS_WINDOWS
-	if (windowId == 0) {
-		// TODO (DK) check if we actually want vsync
-		if (wglSwapIntervalEXT != nullptr) wglSwapIntervalEXT(1);
-	}
-#endif
+// #ifdef SYS_WINDOWS
+// 	if (windowId == 0) {
+// 		// TODO (DK) check if we actually want vsync
+// 		if (wglSwapIntervalEXT != nullptr) wglSwapIntervalEXT(1);
+// 	}
+// #endif
 
-#if defined(SYS_IOS)
-	glGenVertexArraysOES(1, &arrayId[windowId]);
-	glCheckErrors();
-#elif !defined(SYS_ANDROID) && !defined(SYS_HTML5) && !defined(SYS_TIZEN) && !defined(SYS_PI)
-	glGenVertexArrays(1, &arrayId[windowId]);
-	glCheckErrors();
-#endif
+// #if defined(SYS_IOS)
+	// glGenVertexArraysOES(1, &arrayId[windowId]);
+	// glCheckErrors();
+// #elif !defined(SYS_ANDROID) && !defined(SYS_HTML5) && !defined(SYS_TIZEN) && !defined(SYS_PI)
+	// glGenVertexArrays(1, &arrayId[windowId]);
+	// glCheckErrors();
+// #endif
 
 	_width = System::windowWidth(0);
 	_height = System::windowHeight(0);
@@ -846,7 +846,7 @@ void Graphics::setRenderTarget(RenderTarget* texture, int num, int additionalTar
 }
 
 void Graphics::restoreRenderTarget() {
-	// glBindFramebuffer(GL_FRAMEBUFFER, originalFramebuffer[System::currentDevice()]);
+	glBindFramebuffer(GL_FRAMEBUFFER, originalFramebuffer[System::currentDevice()]);
 	glCheckErrors();
 	int w = System::windowWidth(System::currentDevice());
 	int h = System::windowHeight(System::currentDevice());

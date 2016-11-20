@@ -966,16 +966,16 @@ void Kore::System::destroyWindow(int index) {
 }
 
 void Kore::System::makeCurrent(int contextId) {
-	// if (currentDeviceId == contextId) {
-		// return;
-	// }
+	if (currentDeviceId == contextId) {
+		return;
+	}
 
-	// currentDeviceId = contextId;
+	currentDeviceId = contextId;
 	// Graphics::makeCurrent(contextId);
 }
 
 void Kore::System::clearCurrent() {
-	// currentDeviceId = -1;
+	currentDeviceId = -1;
 	// Graphics::clearCurrent();
 }
 
@@ -1007,7 +1007,7 @@ int Kore::System::initWindow(WindowOptions options) {
 	// SetWindowLong(hwnd, GWL_STYLE, style);
 
 	// Graphics::setAntialiasingSamples(options.rendererOptions.antialiasing);
-	// Graphics::init(windowId, options.rendererOptions.depthBufferBits, options.rendererOptions.stencilBufferBits);
+	Graphics::init(windowId, options.rendererOptions.depthBufferBits, options.rendererOptions.stencilBufferBits);
 
 	return windowId;
 }
