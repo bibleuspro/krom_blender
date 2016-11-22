@@ -272,6 +272,14 @@ namespace Kore {
 			return windowimpl::windows[id]->height;
 		}
 
+		void setWindowWidth(int id, int w) {
+			windowimpl::windows[id]->width = w;
+		}
+
+		void setWindowHeight(int id, int h) {
+			windowimpl::windows[id]->height = h;
+		}
+
 		void* windowHandle(int id) {
 			return (void*)windowimpl::windows[id]->handle;
 		}
@@ -286,6 +294,14 @@ namespace Kore {
 
 		int windowHeight(int id) {
 			return ::windowHeight;
+		}
+
+		void setWindowWidth(int id, int w) {
+			::windowWidth = w;
+		}
+
+		void setWindowHeight(int id, int h) {
+			::windowHeight = h;
 		}
 
 		void* windowHandle(int id) {

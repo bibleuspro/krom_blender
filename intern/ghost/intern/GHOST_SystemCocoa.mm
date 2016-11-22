@@ -486,7 +486,7 @@ GHOST_TSuccess GHOST_SystemCocoa::init()
 			[NSApp setDelegate:appDelegate];
 		}
 		
-		// [NSApp finishLaunching]; // Called by CEF
+		[NSApp finishLaunching];
 		
 		[pool drain];
 	}

@@ -48,17 +48,6 @@ static PyObject *py_bk_set_url(PyObject *UNUSED(self), PyObject *args)
 	Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(py_bk_load_url_doc,
-".. function:: load_url()\n"
-"\n"
-"   Navigate to currenly set url.\n"
-);
-static PyObject *py_bk_load_url(PyObject *UNUSED(self), PyObject *args)
-{
-	armoryLoadUrl();
-	Py_RETURN_NONE;
-}
-
 PyDoc_STRVAR(py_bk_draw_doc,
 ".. function:: draw()\n"
 "\n"
@@ -137,7 +126,6 @@ static PyObject *py_bk_get_operator_updated(PyObject *UNUSED(self), PyObject *ar
 /*----------------------------MODULE INIT-------------------------*/
 static PyMethodDef BK_methods[] = {
 	{"set_url", (PyCFunction) py_bk_set_url, METH_VARARGS, py_bk_set_url_doc},
-	{"load_url", (PyCFunction) py_bk_load_url, METH_VARARGS, py_bk_load_url_doc},
 	{"draw", (PyCFunction) py_bk_draw, METH_VARARGS, py_bk_draw_doc},
 	{"call_js", (PyCFunction) py_bk_call_js, METH_VARARGS, py_bk_call_js_doc},
 	{"get_console", (PyCFunction) py_bk_get_console, METH_NOARGS, py_bk_get_console_doc},

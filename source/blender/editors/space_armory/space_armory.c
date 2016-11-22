@@ -76,33 +76,21 @@ static SpaceLink *armory_new(const bContext *C)
 }
 
 bool keystate[256];
-bool browser_initialized = false;
 /* add handlers, stuff you only do once or on area/region changes */
 static void armory_main_area_init(wmWindowManager *wm, ARegion *ar)
 {	
-	int i;
-	for (i = 0; i < 256; i++) keystate[i] = false;
-
 	UI_view2d_region_reinit(&ar->v2d, V2D_COMMONVIEW_CUSTOM, ar->winx, ar->winy);
-
-	bool browser_running = armoryStarted();
     
 	int x = ar->winrct.xmin;
 	int y = ar->winrct.ymin;
 	int w = ar->winrct.xmax - ar->winrct.xmin;
 	int h = ar->winrct.ymax - ar->winrct.ymin;
 
-	/* Start new browser instance */
-	if (!browser_running) {
-		if (!browser_initialized) {
-			armoryInit();
-			browser_initialized = true;
-		}
+	if (!armoryStarted()) {
+		for (int i = 0; i < 256; i++) keystate[i] = false;
 		armoryShow(x, y, w, h);
 	}
-	else {
-		armoryUpdatePosition(x, y, w, h);
-	}
+	else armoryUpdatePosition(x, y, w, h);
 }
 
 static void armory_main_area_exit(wmWindowManager *wm, ARegion *ar)
@@ -151,7 +139,10 @@ void armory_GPU_buffers_unbind(void)
 	glUseProgram(0);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
+
+#ifndef SYS_OSX // Blender limited to opengl 2.1 on macos
 	glBindVertexArray(0);
+#endif
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);

@@ -78,12 +78,12 @@ void endGL() {
 #endif
 
 bool System::handleMessages() {
-	NSEvent* event =
-	    [myapp nextEventMatchingMask:NSAnyEventMask untilDate:[NSDate distantPast] inMode:NSDefaultRunLoopMode dequeue:YES]; // distantPast: non-blocking
-	if (event != nil) {
-		[myapp sendEvent:event];
-		[myapp updateWindows];
-	}
+	// NSEvent* event =
+	//     [myapp nextEventMatchingMask:NSAnyEventMask untilDate:[NSDate distantPast] inMode:NSDefaultRunLoopMode dequeue:YES]; // distantPast: non-blocking
+	// if (event != nil) {
+	// 	[myapp sendEvent:event];
+	// 	[myapp updateWindows];
+	// }
 	return true;
 }
 
@@ -134,6 +134,14 @@ int Kore::System::windowWidth(int id) {
 
 int Kore::System::windowHeight(int id) {
 	return windows[id]->height;
+}
+
+void Kore::System::setWindowWidth(int id, int w) {
+	windows[id]->width = w;
+}
+
+void Kore::System::setWindowHeight(int id, int h) {
+	windows[id]->height = h;
 }
 
 int System::desktopWidth() {

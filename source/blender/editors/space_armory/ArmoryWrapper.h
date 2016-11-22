@@ -26,7 +26,6 @@
 #endif
 
     void armoryNew(void);
-    void armoryInit();
     void armoryShow(int x, int y, int w, int h);
     void armoryExit(void);
     void armoryDraw(void);
@@ -41,8 +40,6 @@
     void armoryKeyUp(int code);
 
     void armoryCallJS();
-    void armoryLoadUrl();
-    void armoryUpdateChromium();
 
     extern char armory_url[512]; // Passed from Python
     extern char armory_jssource[512];

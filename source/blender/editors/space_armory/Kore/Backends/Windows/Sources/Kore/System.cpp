@@ -112,7 +112,7 @@ namespace Kore {
 			// GetClientRect(windows[id]->hwnd, &vRect);
 			// int i = vRect.right;
 			// return i;
-			return windows[0]->width;
+			return windows[id]->width;
 		}
 
 		int windowHeight(int id) {
@@ -120,7 +120,15 @@ namespace Kore {
 			// GetClientRect(windows[id]->hwnd, &vRect);
 			// int i = vRect.bottom;
 			// return i;
-			return windows[0]->height;
+			return windows[id]->height;
+		}
+
+		void setWindowWidth(int id, int w) {
+			windows[id]->width = w;
+		}
+
+		void setWindowHeight(int id, int h) {
+			windows[id]->height = h;
 		}
 
 		int screenDpi() {
