@@ -32,15 +32,15 @@
 #include "../../editors/space_armory/ArmoryWrapper.h"
 
 /*----------------------------MODULE FUNCTIONS-------------------------*/
-PyDoc_STRVAR(py_bk_set_url_doc,
-".. function:: set_url()\n"
+PyDoc_STRVAR(py_bk_set_files_location_doc,
+".. function:: set_files_location()\n"
 "\n"
 "   Set url to be opened.\n"
 );
-static PyObject *py_bk_set_url(PyObject *UNUSED(self), PyObject *args)
+static PyObject *py_bk_set_files_location(PyObject *UNUSED(self), PyObject *args)
 {
 	char* name;
-	if (!PyArg_ParseTuple(args, "s:barmory.set_url", &name))
+	if (!PyArg_ParseTuple(args, "s:barmory.set_files_location", &name))
 		return NULL;
 
 	strcpy(armory_url, name);
@@ -125,7 +125,7 @@ static PyObject *py_bk_get_operator_updated(PyObject *UNUSED(self), PyObject *ar
 
 /*----------------------------MODULE INIT-------------------------*/
 static PyMethodDef BK_methods[] = {
-	{"set_url", (PyCFunction) py_bk_set_url, METH_VARARGS, py_bk_set_url_doc},
+	{"set_files_location", (PyCFunction) py_bk_set_files_location, METH_VARARGS, py_bk_set_files_location_doc},
 	{"draw", (PyCFunction) py_bk_draw, METH_VARARGS, py_bk_draw_doc},
 	{"call_js", (PyCFunction) py_bk_call_js, METH_VARARGS, py_bk_call_js_doc},
 	{"get_console", (PyCFunction) py_bk_get_console, METH_NOARGS, py_bk_get_console_doc},

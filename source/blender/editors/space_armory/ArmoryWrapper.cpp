@@ -77,7 +77,21 @@ namespace {
 		HandleScope scope(args.GetIsolate());
 		Local<Value> arg = args[0];
 		String::Utf8Value value(arg);
-		Kore::log(Kore::Info, "%s", *value);
+
+		std::string str = std::string(*value);  
+		int pos = str.find(" ", 0);
+		if (str.compare(pos + 1, 5, "__arm") == 0) {
+			strcpy(armory_operator, str.c_str());
+			armory_operator_updated = 1;
+		}
+		else {
+			Kore::log(Kore::Info, "%s", str.c_str());
+
+			if (strlen(str.c_str()) <= 512) {
+				strcpy(armory_console, str.c_str());
+				armory_console_updated = 1;
+			}
+		}
 	}
 	
 	void graphics_clear(const v8::FunctionCallbackInfo<v8::Value>& args) {
@@ -1336,7 +1350,7 @@ namespace {
 	}
 	
 	void update() {
-		// Kore::Graphics::begin();
+		Kore::Graphics::begin();
 		runV8();
 		//tickDebugger();
 		// Kore::Graphics::end();
@@ -1352,8 +1366,8 @@ namespace {
 		TryCatch try_catch(isolate);
 		v8::Local<v8::Function> func = v8::Local<v8::Function>::New(isolate, keyboardDownFunction);
 		Local<Value> result;
-		const int argc = 1;
-		Local<Value> argv[argc] = {Int32::New(isolate, (int)code)};
+		const int argc = 2;
+		Local<Value> argv[argc] = {Int32::New(isolate, (int)code), Int32::New(isolate, (int)character)};
 		if (!func->Call(context, context->Global(), argc, argv).ToLocal(&result)) {
 			v8::String::Utf8Value stack_trace(try_catch.StackTrace());
 			Kore::log(Kore::Error, "Trace: %s", *stack_trace);
@@ -1369,8 +1383,8 @@ namespace {
 		TryCatch try_catch(isolate);
 		v8::Local<v8::Function> func = v8::Local<v8::Function>::New(isolate, keyboardUpFunction);
 		Local<Value> result;
-		const int argc = 1;
-		Local<Value> argv[argc] = {Int32::New(isolate, (int)code)};
+		const int argc = 2;
+		Local<Value> argv[argc] = {Int32::New(isolate, (int)code), Int32::New(isolate, (int)character)};
 		if (!func->Call(context, context->Global(), argc, argv).ToLocal(&result)) {
 			v8::String::Utf8Value stack_trace(try_catch.StackTrace());
 			Kore::log(Kore::Error, "Trace: %s", *stack_trace);
@@ -1386,8 +1400,8 @@ namespace {
 		TryCatch try_catch(isolate);
 		v8::Local<v8::Function> func = v8::Local<v8::Function>::New(isolate, mouseMoveFunction);
 		Local<Value> result;
-		const int argc = 2;
-		Local<Value> argv[argc] = {Int32::New(isolate, x), Int32::New(isolate, y)};
+		const int argc = 4;
+		Local<Value> argv[argc] = {Int32::New(isolate, x), Int32::New(isolate, y), Int32::New(isolate, mx), Int32::New(isolate, my)};
 		if (!func->Call(context, context->Global(), argc, argv).ToLocal(&result)) {
 			v8::String::Utf8Value stack_trace(try_catch.StackTrace());
 			Kore::log(Kore::Error, "Trace: %s", *stack_trace);
@@ -1638,15 +1652,15 @@ void armoryShow(int x, int y, int w, int h) {
 		Kore::System::setName("Krom");
 		Kore::System::setup();
 		Kore::WindowOptions options;
-		options.title = "Krom";
-		options.width = 1;
-		options.height = 1;
-		options.targetDisplay = 0;
-		options.mode = Kore::WindowModeWindow;
-		options.rendererOptions.depthBufferBits = 16;
-		options.rendererOptions.stencilBufferBits = 8;
-		options.rendererOptions.textureFormat = 0;
-		options.rendererOptions.antialiasing = 0;
+		// options.title = "Krom";
+		// options.width = 1;
+		// options.height = 1;
+		// options.targetDisplay = 0;
+		// options.mode = Kore::WindowModeWindow;
+		// options.rendererOptions.depthBufferBits = 16;
+		// options.rendererOptions.stencilBufferBits = 8;
+		// options.rendererOptions.textureFormat = 0;
+		// options.rendererOptions.antialiasing = 0;
 		Kore::System::initWindow(options);
 		Kore::Random::init(Kore::System::time() * 1000);
 
@@ -1660,8 +1674,8 @@ void armoryShow(int x, int y, int w, int h) {
 		startV8();
 	}
 
-	Kore::System::setWindowWidth(0, w + 2);
-	Kore::System::setWindowHeight(0, h + 190);
+	Kore::System::setWindowWidth(0, w);
+	Kore::System::setWindowHeight(0, h);
 
 	Kore::FileReader reader;
 	reader.open("krom.js");
@@ -1696,7 +1710,8 @@ bool armoryStarted() {
 }
 
 void armoryUpdatePosition(int x, int y, int w, int h) {
-
+	// Kore::System::setWindowWidth(0, w);
+	// Kore::System::setWindowHeight(0, h);
 }
 
 void armoryFree() {
@@ -1711,12 +1726,34 @@ void armoryMouseMove(int x, int y) {
 	Kore::Mouse::the()->_move(0, x, y);
 }
 
-void armoryMousePress(int x, int y) {
-	Kore::Mouse::the()->_press(0, 0, x, y);
+void armoryMousePress(int button, int x, int y) {
+	// window, button
+	Kore::Mouse::the()->_press(0, button, x, y);
 }
 
-void armoryMouseRelease(int x, int y) {
-	Kore::Mouse::the()->_release(0, 0, x, y);
+void armoryMouseRelease(int button, int x, int y) {
+	Kore::Mouse::the()->_release(0, button, x, y);
+}
+
+
+Kore::KeyCode keyCode(int code) {
+	switch (code) {
+	case 137: return Kore::Key_Left;
+	case 138: return Kore::Key_Down;
+	case 139: return Kore::Key_Right;
+	case 140: return Kore::Key_Up;
+	case 217: return Kore::Key_Shift;
+	case 218: return Kore::Key_Escape;
+	default: return (Kore::KeyCode)code;
+	}
+}
+
+void armoryKeyDown(int code) {
+	Kore::Keyboard::the()->_keydown(keyCode(code), code);
+}
+
+void armoryKeyUp(int code) {
+	Kore::Keyboard::the()->_keyup(keyCode(code), code);
 }
 
 // LEFTARROWKEY    = 0x0089,  /* 137 */
@@ -1724,16 +1761,43 @@ void armoryMouseRelease(int x, int y) {
 // RIGHTARROWKEY   = 0x008b,  /* 139 */
 // UPARROWKEY      = 0x008c,  /* 140 */
 
-void armoryKeyDown(int code) {
-	if (code == 137) Kore::Keyboard::the()->_keydown(Kore::Key_Left, 0);
-	else if (code == 138) Kore::Keyboard::the()->_keydown(Kore::Key_Down, 0);
-	else if (code == 139) Kore::Keyboard::the()->_keydown(Kore::Key_Right, 0);
-	else if (code == 140) Kore::Keyboard::the()->_keydown(Kore::Key_Up, 0);
-}
+// AKEY            = 0x0061,  /* 'a' */
+// BKEY            = 0x0062,  /* 'b' */
+// CKEY            = 0x0063,  /* 'c' */
+// DKEY            = 0x0064,  /* 'd' */
+// EKEY            = 0x0065,  /* 'e' */
+// FKEY            = 0x0066,  /* 'f' */
+// GKEY            = 0x0067,  /* 'g' */
+// HKEY            = 0x0068,  /* 'h' */
+// IKEY            = 0x0069,  /* 'i' */
+// JKEY            = 0x006a,  /* 'j' */
+// KKEY            = 0x006b,  /* 'k' */
+// LKEY            = 0x006c,  /* 'l' */
+// MKEY            = 0x006d,  /* 'm' */
+// NKEY            = 0x006e,  /* 'n' */
+// OKEY            = 0x006f,  /* 'o' */
+// PKEY            = 0x0070,  /* 'p' */
+// QKEY            = 0x0071,  /* 'q' */
+// RKEY            = 0x0072,  /* 'r' */
+// SKEY            = 0x0073,  /* 's' */
+// TKEY            = 0x0074,  /* 't' */
+// UKEY            = 0x0075,  /* 'u' */
+// VKEY            = 0x0076,  /* 'v' */
+// WKEY            = 0x0077,  /* 'w' */
+// XKEY            = 0x0078,  /* 'x' */
+// YKEY            = 0x0079,  /* 'y' */
+// ZKEY            = 0x007a,  /* 'z' */
 
-void armoryKeyUp(int code) {
-	if (code == 137) Kore::Keyboard::the()->_keyup(Kore::Key_Left, 0);
-	else if (code == 138) Kore::Keyboard::the()->_keyup(Kore::Key_Down, 0);
-	else if (code == 139) Kore::Keyboard::the()->_keyup(Kore::Key_Right, 0);
-	else if (code == 140) Kore::Keyboard::the()->_keyup(Kore::Key_Up, 0);
-}
+// ZEROKEY         = 0x0030,  /* '0' */
+// ONEKEY          = 0x0031,  /* '1' */
+// TWOKEY          = 0x0032,  /* '2' */
+// THREEKEY        = 0x0033,  /* '3' */
+// FOURKEY         = 0x0034,  /* '4' */
+// FIVEKEY         = 0x0035,  /* '5' */
+// SIXKEY          = 0x0036,  /* '6' */
+// SEVENKEY        = 0x0037,  /* '7' */
+// EIGHTKEY        = 0x0038,  /* '8' */
+// NINEKEY         = 0x0039,  /* '9' */
+
+// LEFTSHIFTKEY    = 0x00d9,  /* 217 */
+// ESCKEY          = 0x00da,  /* 218 */

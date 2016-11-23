@@ -174,7 +174,7 @@ void Graphics::init(int windowId, int depthBufferBits, int stencilBufferBits) {
 // 	glEnable(GL_BLEND);
 // 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 // 	setRenderState(DepthTest, false);
-// 	glViewport(0, 0, System::windowWidth(windowId), System::windowHeight(windowId));
+	// glViewport(0, 0, System::windowWidth(windowId), System::windowHeight(windowId));
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &originalFramebuffer[windowId]);
 
 // 	for (int i = 0; i < 32; ++i) {
@@ -333,32 +333,37 @@ void Graphics::makeCurrent(int contextId) {
 }
 #endif
 
+GLint m_viewport[4];
+GLint m_scissor[4];
 void Graphics::begin(int contextId) {
-	if (System::currentDevice() != -1) {
-		if (System::currentDevice() != contextId) {
-			log(Warning, "begin: wrong glContext is active");
-		}
-		else {
+	// if (System::currentDevice() != -1) {
+		// if (System::currentDevice() != contextId) {
+			// log(Warning, "begin: wrong glContext is active");
+		// }
+		// else {
 			//**log(Warning, "begin: a glContext is still active");
-		}
+		// }
 
 		// return; // TODO (DK) return here?
-	}
+	// }
 
 	// System::setCurrentDevice(contextId);
-	System::makeCurrent(contextId);
+	// System::makeCurrent(contextId);
 
-	glViewport(0, 0, _width, _height);
+	// glViewport(0, 0, _width, _height);
 
-#ifdef SYS_IOS
-	beginGL();
-#endif
+// #ifdef SYS_IOS
+	// beginGL();
+// #endif
 
-#ifdef SYS_ANDROID
+// #ifdef SYS_ANDROID
 	// if rendered to a texture, strange things happen if the backbuffer is not cleared
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-#endif
+	// glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	// glClear(GL_COLOR_BUFFER_BIT);
+// #endif
+
+	glGetIntegerv(GL_VIEWPORT, m_viewport);
+	glGetIntegerv(GL_SCISSOR_BOX, m_scissor);
 }
 
 void Graphics::viewport(int x, int y, int width, int height) {
@@ -824,6 +829,9 @@ void Graphics::setRenderTarget(RenderTarget* texture, int num, int additionalTar
 		// System::makeCurrent(texture->contextId);
 		glBindFramebuffer(GL_FRAMEBUFFER, texture->_framebuffer);
 		glCheckErrors();
+
+		glDisable(GL_SCISSOR_TEST); ////
+		
 		glViewport(0, 0, texture->width, texture->height);
 		_renderTargetWidth = texture->width;
 		_renderTargetHeight = texture->height;
@@ -848,11 +856,19 @@ void Graphics::setRenderTarget(RenderTarget* texture, int num, int additionalTar
 void Graphics::restoreRenderTarget() {
 	glBindFramebuffer(GL_FRAMEBUFFER, originalFramebuffer[System::currentDevice()]);
 	glCheckErrors();
-	int w = System::windowWidth(System::currentDevice());
-	int h = System::windowHeight(System::currentDevice());
-	glViewport(0, 0, w, h);
-	_renderTargetWidth = w;
-	_renderTargetHeight = h;
+	// int w = System::windowWidth(System::currentDevice());
+	// int h = System::windowHeight(System::currentDevice());
+	// glViewport(0, 0, w, h);
+	
+	glViewport(m_viewport[0], m_viewport[1], m_viewport[2], m_viewport[3]);
+	glEnable(GL_SCISSOR_TEST);
+	glScissor(m_scissor[0], m_scissor[1], m_scissor[2], m_scissor[3]);
+	
+	// _renderTargetWidth = w;
+	// _renderTargetHeight = h;
+	_renderTargetWidth = m_viewport[2] - m_viewport[0];
+	_renderTargetHeight = m_viewport[3] - m_viewport[1];
+	
 	renderToBackbuffer = true;
 	glCheckErrors();
 }

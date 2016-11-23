@@ -34,8 +34,8 @@
     void armoryUpdatePosition(int x, int y, int w, int h);
     
     void armoryMouseMove(int x, int y);
-    void armoryMousePress(int x, int y);
-    void armoryMouseRelease(int x, int y);
+    void armoryMousePress(int button, int x, int y);
+    void armoryMouseRelease(int button, int x, int y);
     void armoryKeyDown(int code);
     void armoryKeyUp(int code);
 

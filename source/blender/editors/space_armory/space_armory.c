@@ -75,7 +75,7 @@ static SpaceLink *armory_new(const bContext *C)
 	return (SpaceLink *)sarmory;
 }
 
-bool keystate[256];
+bool keystate[512];
 /* add handlers, stuff you only do once or on area/region changes */
 static void armory_main_area_init(wmWindowManager *wm, ARegion *ar)
 {	
@@ -87,7 +87,7 @@ static void armory_main_area_init(wmWindowManager *wm, ARegion *ar)
 	int h = ar->winrct.ymax - ar->winrct.ymin;
 
 	if (!armoryStarted()) {
-		for (int i = 0; i < 256; i++) keystate[i] = false;
+		for (int i = 0; i < 512; i++) keystate[i] = false;
 		armoryShow(x, y, w, h);
 	}
 	else armoryUpdatePosition(x, y, w, h);
@@ -159,71 +159,58 @@ int lastmx = -1, lastmy = -1;
 int pressed = 0;
 static void armory_main_area_draw(const bContext *C, ARegion *ar)
 {
-	/* draw entirely, view changes should be handled here */
-	// SpaceArmory *sarmory = CTX_wm_space_armory(C);
-	// View2D *v2d = &ar->v2d;
-	// View2DScrollers *scrollers;
- 
-	// /* clear and setup matrix */
-	// UI_ThemeClearColor(TH_BACK);
-	// glClearColor(1.0, 0.0, 0.0, 1.0);
-	// glClear(GL_COLOR_BUFFER_BIT);
- 
-	// /* works best with no view2d matrix set */
-	// UI_view2d_view_ortho(v2d);
- 
-	// /* reset view matrix */
-	// UI_view2d_view_restore(C);
- 
-	// /* scrollers */
-	// scrollers = UI_view2d_scrollers_calc(C, v2d, V2D_ARG_DUMMY, V2D_ARG_DUMMY, V2D_ARG_DUMMY, V2D_GRID_CLAMP);
-	// UI_view2d_scrollers_draw(C, v2d, scrollers);
-	// UI_view2d_scrollers_free(scrollers);
-
-
 	glPushAttrib(GL_TEXTURE_BIT | GL_DEPTH_BUFFER_BIT); // Fix drawBuffers & viewport depth
-
+	// | GL_VIEWPORT_BIT | GL_SCISSOR_BIT
 	armoryDraw();
-
 	glPopAttrib();
 	armory_GPU_buffers_unbind();
 
 	int x = ar->winrct.xmin;
+	int xmax = ar->winrct.xmax;
 	int y = ar->winrct.ymin;
+	int ymax = ar->winrct.ymax;
 	int w = ar->winrct.xmax - ar->winrct.xmin;
 	int h = ar->winrct.ymax - ar->winrct.ymin;
 
 	wmWindow *win = CTX_wm_window(C);
 	wmEvent* event = win->eventstate;
 
-	int mx = event->x;
-	int my = h - event->y;
+	int mx = event->x - x;
+	int my = ymax - event->y;
 
-	if (mx != lastmx || my != lastmy) {
-		armoryMouseMove(mx, my);
-	}
-	else if (event->type == LEFTMOUSE) {
-		if (event->val == KM_PRESS && pressed == 0) {
-			pressed = 1;
-			armoryMousePress(mx, my);	
-		}
-		else if (event->val == KM_RELEASE && pressed == 1) {
-			pressed = 0;
-			armoryMouseRelease(mx, my);
-		}
-	}
-	
-	if (event->type >= LEFTARROWKEY && event->type <= UPARROWKEY) {
-		if (event->val == KM_PRESS && keystate[event->type] == false) {
-			keystate[event->type] = true;
-			armoryKeyDown(event->type);
-		}
-		else if (event->val == KM_RELEASE && keystate[event->type] == true) {
-			keystate[event->type] = false;
-			armoryKeyUp(event->type);
-		}
-	}
+	// Mouse in bounds
+	if (event->x >= x && event->x <= xmax && event->y >= y && event->y <= ymax) {
 
+		if (event->type == LEFTMOUSE || event->type == RIGHTMOUSE) {
+			int button = event->type == LEFTMOUSE ? 0 : 1;
+			if (event->val == KM_PRESS && pressed == 0) {
+				pressed = 1;
+				armoryMousePress(button, mx, my);	
+			}
+			else if (event->val == KM_RELEASE && pressed == 1) {
+				pressed = 0;
+				armoryMouseRelease(button, mx, my);
+			}
+		}
+		if (mx != lastmx || my != lastmy) {
+			armoryMouseMove(mx, my);
+		}
+		
+		// wm_event_types.h
+		if ((event->type >= LEFTARROWKEY && event->type <= UPARROWKEY) ||
+			(event->type >= AKEY && event->type <= ZKEY) ||
+			(event->type >= ZEROKEY && event->type <= NINEKEY) ||
+			(event->type == LEFTSHIFTKEY || event->type == ESCKEY)) {
+			if (event->val == KM_PRESS && keystate[event->type] == false) {
+				keystate[event->type] = true;
+				armoryKeyDown(event->type);
+			}
+			else if (event->val == KM_RELEASE && keystate[event->type] == true) {
+				keystate[event->type] = false;
+				armoryKeyUp(event->type);
+			}
+		}
+	}
 
 	lastmx = mx;
 	lastmy = my;
