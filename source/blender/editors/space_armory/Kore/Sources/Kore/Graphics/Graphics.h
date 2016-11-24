@@ -160,7 +160,7 @@ namespace Kore {
 		void setTextureMagnificationFilter(TextureUnit texunit, TextureFilter filter);
 		void setTextureMinificationFilter(TextureUnit texunit, TextureFilter filter);
 		void setTextureMipmapFilter(TextureUnit texunit, MipmapFilter filter);
-		void setBlendingMode(BlendingOperation source, BlendingOperation destination);
+		void setBlendingMode(BlendingOperation source, BlendingOperation destination, BlendingOperation alphaSource, BlendingOperation alphaDestination);
 		void setTextureOperation(TextureOperation operation, TextureArgument arg1, TextureArgument arg2);
 		void setColorMask(bool red, bool green, bool blue, bool alpha);
 

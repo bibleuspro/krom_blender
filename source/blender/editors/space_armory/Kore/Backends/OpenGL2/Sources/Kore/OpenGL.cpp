@@ -492,7 +492,7 @@ void Graphics::end(int windowId) {
 }
 
 void Graphics::clear(uint flags, uint color, float depth, int stencil) {
-	glClearColor(((color & 0x00ff0000) >> 16) / 255.0f, ((color & 0x0000ff00) >> 8) / 255.0f, (color & 0x000000ff) / 255.0f, (color & 0xff000000) / 255.0f);
+	glClearColor(((color & 0x00ff0000) >> 16) / 255.0f, ((color & 0x0000ff00) >> 8) / 255.0f, (color & 0x000000ff) / 255.0f, ((color & 0xff000000) >> 24) / 255.0f);
 	glCheckErrors();
 	if (flags & ClearDepthFlag) {
 		glEnable(GL_DEPTH_TEST);
@@ -818,8 +818,8 @@ void Graphics::setTextureOperation(TextureOperation operation, TextureArgument a
 	// glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 }
 
-void Graphics::setBlendingMode(BlendingOperation source, BlendingOperation destination) {
-	glBlendFunc(convert(source), convert(destination));
+void Graphics::setBlendingMode(BlendingOperation source, BlendingOperation destination, BlendingOperation alphaSource, BlendingOperation alphaDestination) {
+	glBlendFuncSeparate(convert(source), convert(destination), convert(alphaSource), convert(alphaDestination));
 	glCheckErrors();
 }
 
