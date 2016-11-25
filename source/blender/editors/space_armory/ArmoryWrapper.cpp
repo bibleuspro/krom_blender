@@ -47,12 +47,17 @@
 #include <fstream>
 #include <map>
 #include <sstream>
+
 #include <vector>
 
 using namespace v8;
 
 #ifdef SYS_OSX
 const char* macgetresourcepath();
+#endif
+#ifdef SYS_LINUX
+#include "binreloc.h"
+#include <unistd.h>
 #endif
 
 Global<Context> globalContext;
@@ -1695,6 +1700,15 @@ void filesLocationChanged() {
 
 void armoryShow(int x, int y, int w, int h) {	
 	
+#ifdef SYS_LINUX
+	const char *path = NULL;
+	path = br_find_exe_dir(NULL);
+	if (path) {
+		chdir(path);
+		free((void *)path);
+	}
+#endif
+
     std::ifstream f(armory_url);
 	if (!f.good()) {
 		good = false;

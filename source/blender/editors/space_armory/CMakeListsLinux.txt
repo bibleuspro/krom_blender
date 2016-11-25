@@ -32,12 +32,17 @@ set(INC
 	./V8/include
 	./Kore/Sources
 	./Kore/Backends/OpenGL2/Sources
-	./Kore/Backends/Windows/Sources
+	./Kore/Backends/Linux/Sources
 )
  
 set(INC_SYS
 	${GLEW_INCLUDE_PATH}
 )
+
+list(APPEND INC_SYS
+	${BINRELOC_INCLUDE_DIRS}
+)
+add_definitions(-DWITH_BINRELOC)
  
 set(SRC
 	V8/include/libplatform/libplatform-export.h
@@ -105,21 +110,17 @@ set(SRC
 	Kore/Backends/OpenGL2/Sources/Kore/TextureImpl.h
 	Kore/Backends/OpenGL2/Sources/Kore/VertexBufferImpl.cpp
 	Kore/Backends/OpenGL2/Sources/Kore/VertexBufferImpl.h
-	Kore/Backends/Windows/Sources/Kore/Audio.cpp
-	Kore/Backends/Windows/Sources/Kore/Display.cpp
-	Kore/Backends/Windows/Sources/Kore/Display.h
-	Kore/Backends/Windows/Sources/Kore/Input/Mouse.cpp
-	Kore/Backends/Windows/Sources/Kore/Mutex.cpp
-	Kore/Backends/Windows/Sources/Kore/pch.h
-	Kore/Backends/Windows/Sources/Kore/System.cpp
-	Kore/Backends/Windows/Sources/Kore/Thread.cpp
-	Kore/Backends/Windows/Sources/Kore/Video.h
-	Kore/Backends/Windows/Sources/Kore/VideoSoundStream.h
-	Kore/Backends/Windows/Sources/Kore/WinError.cpp
-	Kore/Backends/Windows/Sources/Kore/WinError.h
-	Kore/Backends/Windows/Sources/Kore/Vr/pch.h
-	Kore/Backends/Windows/Sources/Kore/Vr/VrInterface.cpp
-	Kore/Backends/Windows/Sources/Kore/Vr/VrInterface.h
+	Kore/Backends/Linux/Sources/Kore/Display.cpp
+	Kore/Backends/Linux/Sources/Kore/Display_Xinerama.cpp
+	Kore/Backends/Linux/Sources/Kore/Display_XRandr.cpp
+	Kore/Backends/Linux/Sources/Kore/Display.h
+	Kore/Backends/Linux/Sources/Kore/Input/Mouse.cpp
+	Kore/Backends/Linux/Sources/Kore/Mutex.cpp
+	Kore/Backends/Linux/Sources/Kore/pch.h
+	Kore/Backends/Linux/Sources/Kore/System.cpp
+	Kore/Backends/Linux/Sources/Kore/Thread.cpp
+	Kore/Backends/Linux/Sources/Kore/Video.h
+	Kore/Backends/Linux/Sources/Kore/VideoSoundStream.h
 	Kore/Sources/Kore/Audio/Audio.cpp
 	Kore/Sources/Kore/Audio/Audio.h
 	Kore/Sources/Kore/Audio/Mixer.cpp
@@ -215,36 +216,15 @@ set(SRC
 	ArmoryWrapper.cpp
 )
 
-add_definitions(-DSYS_WINDOWS)
-add_definitions(-D_WINSOCK_DEPRECATED_NO_WARNINGS)
+add_definitions(-DSYS_LINUX)
+add_definitions(-DOPENGL)
  
 blender_add_lib(bf_editor_space_armory "${SRC}" "${INC}" "${INC_SYS}")
 
 
-macro(AddExternalFramework fwname appname libpath)
-	unset(FRAMEWORK_${fwname} CACHE)
 
-    find_library(FRAMEWORK_${fwname}
-        NAMES Chromium\ Embedded\ Framework
-        PATHS ${libpath} 
-        NO_DEFAULT_PATH)
-    if( ${FRAMEWORK_${fwname}} STREQUAL FRAMEWORK_${fwname}-NOTFOUND)
-        MESSAGE(ERROR ": Framework ${fwname} not found: ${FRAMEWORK_${fwname}}")
-    else()
-        TARGET_LINK_LIBRARIES(${appname} ${FRAMEWORK_${fwname}})
-        MESSAGE(STATUS "Framework ${fwname} found at ${FRAMEWORK_${fwname}}")
-    endif()
-endmacro(AddExternalFramework)
-
-#AddExternalFramework(ChromiumEmbeddedFramework bf_editor_space_armory /Users/lubos/armory/blender-build/blender/source/blender/editors/space_armory/cef/Frameworks)
-
-LINK_DIRECTORIES(/Users/lubos/armory/blender-build/blender/source/blender/editors/space_armory/V8/Libraries/macos/release)
-
-TARGET_LINK_LIBRARIES(bf_editor_space_armory C:/blender-git/blender/source/blender/editors/space_armory/V8/Libraries/win32/release/v8.dll.lib)
-TARGET_LINK_LIBRARIES(bf_editor_space_armory C:/blender-git/blender/source/blender/editors/space_armory/V8/Libraries/win32/release/v8_libplatform.dll.lib)
-TARGET_LINK_LIBRARIES(bf_editor_space_armory C:/blender-git/blender/source/blender/editors/space_armory/V8/Libraries/win32/release/v8_libbase.dll.lib)
-
-#TARGET_LINK_LIBRARIES(bf_editor_space_armory, ws2_32, dxguid, dsound, dinput8)
-
-
-#TARGET_LINK_LIBRARIES(bf_editor_space_armory /Users/lubos/armory/blender-build/blender/source/blender/editors/space_armory/V8/Libraries/macos/release/libc++.tbd)
+TARGET_LINK_LIBRARIES(bf_editor_space_armory /home/lubos/blender-git/blender/source/blender/editors/space_armory/V8/Libraries/linux/release/libv8.so)
+TARGET_LINK_LIBRARIES(bf_editor_space_armory /home/lubos/blender-git/blender/source/blender/editors/space_armory/V8/Libraries/linux/release/libicui18n.so)
+TARGET_LINK_LIBRARIES(bf_editor_space_armory /home/lubos/blender-git/blender/source/blender/editors/space_armory/V8/Libraries/linux/release/libicuuc.so)
+TARGET_LINK_LIBRARIES(bf_editor_space_armory /home/lubos/blender-git/blender/source/blender/editors/space_armory/V8/Libraries/linux/release/libv8_libbase.so)
+TARGET_LINK_LIBRARIES(bf_editor_space_armory /home/lubos/blender-git/blender/source/blender/editors/space_armory/V8/Libraries/linux/release/libv8_libplatform.so)

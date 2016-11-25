@@ -399,6 +399,7 @@ namespace {
 		case Zero:
 			return GL_ZERO;
 		}
+		return 0;
 	}
 }
 
