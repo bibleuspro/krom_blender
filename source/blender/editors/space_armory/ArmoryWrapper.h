@@ -41,6 +41,7 @@
 
     void armoryCallJS();
 
+    void filesLocationChanged();
     extern char armory_url[512]; // Passed from Python
     extern char armory_jssource[512];
     extern char armory_console[512];

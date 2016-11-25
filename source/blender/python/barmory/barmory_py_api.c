@@ -44,6 +44,7 @@ static PyObject *py_bk_set_files_location(PyObject *UNUSED(self), PyObject *args
 		return NULL;
 
 	strcpy(armory_url, name);
+	filesLocationChanged();
 
 	Py_RETURN_NONE;
 }

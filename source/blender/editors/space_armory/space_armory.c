@@ -155,8 +155,48 @@ void armory_GPU_buffers_unbind(void)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+
+
 int lastmx = -1, lastmy = -1;
 int pressed = 0;
+
+static void handleEvent(int mx, int my, int etype, int eval) {
+
+    if (etype == LEFTMOUSE || etype == RIGHTMOUSE) {
+		int button = etype == LEFTMOUSE ? 0 : 1;
+		if (eval == KM_PRESS && pressed == 0) {
+			pressed = 1;
+			armoryMousePress(button, mx, my);	
+		}
+		else if (eval == KM_RELEASE && pressed == 1) {
+			pressed = 0;
+			armoryMouseRelease(button, mx, my);
+		}
+	}
+	if (mx != lastmx || my != lastmy) {
+		armoryMouseMove(mx, my);
+	}
+	
+	// wm_event_types.h
+	if ((etype >= LEFTARROWKEY && etype <= UPARROWKEY) ||
+		(etype >= AKEY && etype <= ZKEY) ||
+		(etype >= ZEROKEY && etype <= NINEKEY) ||
+		(etype == LEFTSHIFTKEY || etype == ESCKEY)) {
+
+		if (eval == KM_PRESS && keystate[etype] == false) {
+			keystate[etype] = true;
+			armoryKeyDown(etype);
+		}
+		else if (eval == KM_RELEASE && keystate[etype] == true) {
+			keystate[etype] = false;
+			armoryKeyUp(etype);
+		}
+	}
+}
+
+int lasteval = -1;
+int lastetype = -1;
+
 static void armory_main_area_draw(const bContext *C, ARegion *ar)
 {
 	glPushAttrib(GL_TEXTURE_BIT | GL_DEPTH_BUFFER_BIT); // Fix drawBuffers & viewport depth
@@ -180,37 +220,19 @@ static void armory_main_area_draw(const bContext *C, ARegion *ar)
 
 	// Mouse in bounds
 	if (event->x >= x && event->x <= xmax && event->y >= y && event->y <= ymax) {
+        
+        // Prev event unhandled, > 2 events per frame still get unhandled
+		if (lastetype != -1 && lasteval != -1) {
+			if (event->prevtype != lastetype || event->prevval != lasteval) {
+				handleEvent(mx, my, event->prevtype, event->prevval);
+			}
+		}
 
-		if (event->type == LEFTMOUSE || event->type == RIGHTMOUSE) {
-			int button = event->type == LEFTMOUSE ? 0 : 1;
-			if (event->val == KM_PRESS && pressed == 0) {
-				pressed = 1;
-				armoryMousePress(button, mx, my);	
-			}
-			else if (event->val == KM_RELEASE && pressed == 1) {
-				pressed = 0;
-				armoryMouseRelease(button, mx, my);
-			}
-		}
-		if (mx != lastmx || my != lastmy) {
-			armoryMouseMove(mx, my);
-		}
-		
-		// wm_event_types.h
-		if ((event->type >= LEFTARROWKEY && event->type <= UPARROWKEY) ||
-			(event->type >= AKEY && event->type <= ZKEY) ||
-			(event->type >= ZEROKEY && event->type <= NINEKEY) ||
-			(event->type == LEFTSHIFTKEY || event->type == ESCKEY)) {
-			if (event->val == KM_PRESS && keystate[event->type] == false) {
-				keystate[event->type] = true;
-				armoryKeyDown(event->type);
-			}
-			else if (event->val == KM_RELEASE && keystate[event->type] == true) {
-				keystate[event->type] = false;
-				armoryKeyUp(event->type);
-			}
-		}
+		handleEvent(mx, my, event->type, event->val);
 	}
+
+	lastetype = event->type;
+	lasteval = event->val;
 
 	lastmx = mx;
 	lastmy = my;
