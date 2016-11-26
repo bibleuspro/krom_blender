@@ -1,22 +1,22 @@
 /*
- * ***** BEGIN GPL LICENSE BLOCK *****
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
- *
- * ***** END GPL LICENSE BLOCK *****
- */
+* ***** BEGIN GPL LICENSE BLOCK *****
+*
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License
+* as published by the Free Software Foundation; either version 2
+* of the License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software Foundation,
+* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*
+* ***** END GPL LICENSE BLOCK *****
+*/
 
 #include "ArmoryWrapper.h"
 
@@ -59,6 +59,10 @@ const char* macgetresourcepath();
 #include "binreloc.h"
 #include <unistd.h>
 #endif
+#ifdef SYS_WINDOWS
+#include <windows.h>
+#include <direct.h>
+#endif
 
 Global<Context> globalContext;
 Isolate* isolate;
@@ -77,58 +81,58 @@ namespace {
 	std::map<std::string, bool> shaderChanges;
 	std::map<std::string, std::string> shaderFileNames;
 
-    void update();
-    void keyDown(Kore::KeyCode code, wchar_t character);
-    void keyUp(Kore::KeyCode code, wchar_t character);
-    void mouseMove(int window, int x, int y, int mx, int my);
-    void mouseDown(int window, int button, int x, int y);
-    void mouseUp(int window, int button, int x, int y);
-    
-    void krom_init(const v8::FunctionCallbackInfo<v8::Value>& args) {
-//        HandleScope scope(args.GetIsolate());
-//        Local<Value> arg = args[0];
-//        String::Utf8Value title(arg);
-//        int width = args[1]->ToInt32()->Value();
-//        int height = args[2]->ToInt32()->Value();
-//        int samplesPerPixel = args[3]->ToInt32()->Value();
-//        
-//        Kore::WindowOptions options;
-//        options.title = *title;
-//        options.width = width;
-//        options.height = height;
-//        options.x = 100;
-//        options.y = 100;
-//        options.targetDisplay = 0;
-//        options.mode = Kore::WindowModeWindow;
-//        options.rendererOptions.depthBufferBits = 16;
-//        options.rendererOptions.stencilBufferBits = 8;
-//        options.rendererOptions.textureFormat = 0;
-//        options.rendererOptions.antialiasing = samplesPerPixel;
-//        Kore::System::initWindow(options);
-//        
-//        Kore::Graphics::setRenderState(Kore::DepthTest, false);
-//        //Mixer::init();
-//        //Audio::init();
-//        Kore::Random::init(Kore::System::time() * 1000);
-//        
-//        Kore::System::setCallback(update);
-//        
-//        Kore::Keyboard::the()->KeyDown = keyDown;
-//        Kore::Keyboard::the()->KeyUp = keyUp;
-//        Kore::Mouse::the()->Move = mouseMove;
-//        Kore::Mouse::the()->Press = mouseDown;
-//        Kore::Mouse::the()->Release = mouseUp;
-        
-        //Mixer::play(music);
-    }
-    
+	void update();
+	void keyDown(Kore::KeyCode code, wchar_t character);
+	void keyUp(Kore::KeyCode code, wchar_t character);
+	void mouseMove(int window, int x, int y, int mx, int my);
+	void mouseDown(int window, int button, int x, int y);
+	void mouseUp(int window, int button, int x, int y);
+
+	void krom_init(const v8::FunctionCallbackInfo<v8::Value>& args) {
+		//        HandleScope scope(args.GetIsolate());
+		//        Local<Value> arg = args[0];
+		//        String::Utf8Value title(arg);
+		//        int width = args[1]->ToInt32()->Value();
+		//        int height = args[2]->ToInt32()->Value();
+		//        int samplesPerPixel = args[3]->ToInt32()->Value();
+		//        
+		//        Kore::WindowOptions options;
+		//        options.title = *title;
+		//        options.width = width;
+		//        options.height = height;
+		//        options.x = 100;
+		//        options.y = 100;
+		//        options.targetDisplay = 0;
+		//        options.mode = Kore::WindowModeWindow;
+		//        options.rendererOptions.depthBufferBits = 16;
+		//        options.rendererOptions.stencilBufferBits = 8;
+		//        options.rendererOptions.textureFormat = 0;
+		//        options.rendererOptions.antialiasing = samplesPerPixel;
+		//        Kore::System::initWindow(options);
+		//        
+		//        Kore::Graphics::setRenderState(Kore::DepthTest, false);
+		//        //Mixer::init();
+		//        //Audio::init();
+		//        Kore::Random::init(Kore::System::time() * 1000);
+		//        
+		//        Kore::System::setCallback(update);
+		//        
+		//        Kore::Keyboard::the()->KeyDown = keyDown;
+		//        Kore::Keyboard::the()->KeyUp = keyUp;
+		//        Kore::Mouse::the()->Move = mouseMove;
+		//        Kore::Mouse::the()->Press = mouseDown;
+		//        Kore::Mouse::the()->Release = mouseUp;
+
+		//Mixer::play(music);
+	}
+
 	void LogCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
 		if (args.Length() < 1) return;
 		HandleScope scope(args.GetIsolate());
 		Local<Value> arg = args[0];
 		String::Utf8Value value(arg);
 
-		std::string str = std::string(*value);  
+		std::string str = std::string(*value);
 		int pos = str.find(" ", 0);
 		if (str.compare(pos + 1, 5, "__arm") == 0) {
 			strcpy(armory_operator, str.c_str());
@@ -143,7 +147,7 @@ namespace {
 			}
 		}
 	}
-	
+
 	void graphics_clear(const v8::FunctionCallbackInfo<v8::Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		int flags = args[0]->ToInt32()->Value();
@@ -152,55 +156,55 @@ namespace {
 		int stencil = args[3]->ToInt32()->Value();
 		Kore::Graphics::clear(flags, color, depth, stencil);
 	}
-	
+
 	void krom_set_callback(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Local<Value> arg = args[0];
 		Local<Function> func = Local<Function>::Cast(arg);
 		updateFunction.Reset(isolate, func);
 	}
-	
+
 	void krom_set_keyboard_down_callback(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Local<Value> arg = args[0];
 		Local<Function> func = Local<Function>::Cast(arg);
 		keyboardDownFunction.Reset(isolate, func);
 	}
-	
+
 	void krom_set_keyboard_up_callback(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Local<Value> arg = args[0];
 		Local<Function> func = Local<Function>::Cast(arg);
 		keyboardUpFunction.Reset(isolate, func);
 	}
-	
+
 	void krom_set_mouse_down_callback(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Local<Value> arg = args[0];
 		Local<Function> func = Local<Function>::Cast(arg);
 		mouseDownFunction.Reset(isolate, func);
 	}
-	
+
 	void krom_set_mouse_up_callback(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Local<Value> arg = args[0];
 		Local<Function> func = Local<Function>::Cast(arg);
 		mouseUpFunction.Reset(isolate, func);
 	}
-	
+
 	void krom_set_mouse_move_callback(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Local<Value> arg = args[0];
 		Local<Function> func = Local<Function>::Cast(arg);
 		mouseMoveFunction.Reset(isolate, func);
 	}
-	
+
 	void krom_create_indexbuffer(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 
 		Local<ObjectTemplate> templ = ObjectTemplate::New(isolate);
 		templ->SetInternalFieldCount(1);
-		
+
 		Local<Object> obj = templ->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
 		obj->SetInternalField(0, External::New(isolate, new Kore::IndexBuffer(args[0]->Int32Value())));
 		args.GetReturnValue().Set(obj);
@@ -212,29 +216,29 @@ namespace {
 		Kore::IndexBuffer* buffer = (Kore::IndexBuffer*)field->Value();
 		delete buffer;
 	}
-	
+
 	void krom_set_indices(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
-		
+
 		Local<External> field = Local<External>::Cast(args[0]->ToObject()->GetInternalField(0));
 		Kore::IndexBuffer* buffer = (Kore::IndexBuffer*)field->Value();
-		
+
 		Local<Object> array = args[1]->ToObject();
-		
+
 		int* indices = buffer->lock();
 		for (int32_t i = 0; i < buffer->count(); ++i) {
 			indices[i] = array->Get(i)->ToInt32()->Value();
 		}
 		buffer->unlock();
 	}
-	
+
 	void krom_set_indexbuffer(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Local<External> field = Local<External>::Cast(args[0]->ToObject()->GetInternalField(0));
 		Kore::IndexBuffer* buffer = (Kore::IndexBuffer*)field->Value();
 		Kore::Graphics::setIndexBuffer(*buffer);
 	}
-	
+
 	Kore::VertexData convertVertexData(int num) {
 		switch (num) {
 		case 0:
@@ -250,13 +254,13 @@ namespace {
 		}
 		return Kore::Float1VertexData;
 	}
-	
+
 	void krom_create_vertexbuffer(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
-		
+
 		Local<ObjectTemplate> templ = ObjectTemplate::New(isolate);
 		templ->SetInternalFieldCount(1);
-		
+
 		Local<Object> obj = templ->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
 
 		Local<Object> jsstructure = args[1]->ToObject();
@@ -272,7 +276,7 @@ namespace {
 			strcpy(name, *utf8_value);
 			structure.add(name, convertVertexData(data));
 		}
-		
+
 		obj->SetInternalField(0, External::New(isolate, new Kore::VertexBuffer(args[0]->Int32Value(), structure, args[2]->Int32Value())));
 		args.GetReturnValue().Set(obj);
 	}
@@ -283,13 +287,13 @@ namespace {
 		Kore::VertexBuffer* buffer = (Kore::VertexBuffer*)field->Value();
 		delete buffer;
 	}
-	
+
 	void krom_set_vertices(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
-		
+
 		Local<External> field = Local<External>::Cast(args[0]->ToObject()->GetInternalField(0));
 		Kore::VertexBuffer* buffer = (Kore::VertexBuffer*)field->Value();
-		
+
 		Local<Float32Array> f32array = Local<Float32Array>::Cast(args[1]);
 		ArrayBuffer::Contents content;
 		if (f32array->Buffer()->IsExternal()) content = f32array->Buffer()->GetContents();
@@ -302,7 +306,7 @@ namespace {
 		}
 		buffer->unlock();
 	}
-	
+
 	void krom_set_vertexbuffer(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Local<External> field = Local<External>::Cast(args[0]->ToObject()->GetInternalField(0));
@@ -318,10 +322,10 @@ namespace {
 			Local<External> field = Local<External>::Cast(args[i]->ToObject()->GetInternalField(0));
 			Kore::VertexBuffer* buffer = (Kore::VertexBuffer*)field->Value();
 			vertexBuffers[i] = buffer;
-		}		
+		}
 		Kore::Graphics::setVertexBuffers(vertexBuffers, count);
 	}
-	
+
 	void krom_draw_indexed_vertices(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		int start = args[0]->ToInt32()->Value();
@@ -338,38 +342,38 @@ namespace {
 		if (count < 0) Kore::Graphics::drawIndexedVerticesInstanced(instanceCount);
 		else Kore::Graphics::drawIndexedVerticesInstanced(instanceCount, start, count);
 	}
-	
+
 	std::string replace(std::string str, char a, char b) {
 		for (size_t i = 0; i < str.size(); ++i) {
 			if (str[i] == a) str[i] = b;
 		}
 		return str;
 	}
-	
+
 	void krom_create_vertex_shader(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Local<ArrayBuffer> buffer = Local<ArrayBuffer>::Cast(args[0]);
 		ArrayBuffer::Contents content = buffer->Externalize();
 		Kore::Shader* shader = new Kore::Shader(content.Data(), (int)content.ByteLength(), Kore::VertexShader);
-		
+
 		Local<ObjectTemplate> templ = ObjectTemplate::New(isolate);
 		templ->SetInternalFieldCount(1);
-		
+
 		Local<Object> obj = templ->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
 		obj->SetInternalField(0, External::New(isolate, shader));
 		obj->Set(String::NewFromUtf8(isolate, "name"), args[1]);
 		args.GetReturnValue().Set(obj);
 	}
-	
+
 	void krom_create_fragment_shader(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Local<ArrayBuffer> buffer = Local<ArrayBuffer>::Cast(args[0]);
 		ArrayBuffer::Contents content = buffer->Externalize();
 		Kore::Shader* shader = new Kore::Shader(content.Data(), (int)content.ByteLength(), Kore::FragmentShader);
-		
+
 		Local<ObjectTemplate> templ = ObjectTemplate::New(isolate);
 		templ->SetInternalFieldCount(1);
-		
+
 		Local<Object> obj = templ->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
 		obj->SetInternalField(0, External::New(isolate, shader));
 		obj->Set(String::NewFromUtf8(isolate, "name"), args[1]);
@@ -381,10 +385,10 @@ namespace {
 		Local<ArrayBuffer> buffer = Local<ArrayBuffer>::Cast(args[0]);
 		ArrayBuffer::Contents content = buffer->Externalize();
 		Kore::Shader* shader = new Kore::Shader(content.Data(), (int)content.ByteLength(), Kore::GeometryShader);
-		
+
 		Local<ObjectTemplate> templ = ObjectTemplate::New(isolate);
 		templ->SetInternalFieldCount(1);
-		
+
 		Local<Object> obj = templ->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
 		obj->SetInternalField(0, External::New(isolate, shader));
 		obj->Set(String::NewFromUtf8(isolate, "name"), args[1]);
@@ -396,10 +400,10 @@ namespace {
 		Local<ArrayBuffer> buffer = Local<ArrayBuffer>::Cast(args[0]);
 		ArrayBuffer::Contents content = buffer->Externalize();
 		Kore::Shader* shader = new Kore::Shader(content.Data(), (int)content.ByteLength(), Kore::TessellationControlShader);
-		
+
 		Local<ObjectTemplate> templ = ObjectTemplate::New(isolate);
 		templ->SetInternalFieldCount(1);
-		
+
 		Local<Object> obj = templ->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
 		obj->SetInternalField(0, External::New(isolate, shader));
 		obj->Set(String::NewFromUtf8(isolate, "name"), args[1]);
@@ -411,10 +415,10 @@ namespace {
 		Local<ArrayBuffer> buffer = Local<ArrayBuffer>::Cast(args[0]);
 		ArrayBuffer::Contents content = buffer->Externalize();
 		Kore::Shader* shader = new Kore::Shader(content.Data(), (int)content.ByteLength(), Kore::TessellationEvaluationShader);
-		
+
 		Local<ObjectTemplate> templ = ObjectTemplate::New(isolate);
 		templ->SetInternalFieldCount(1);
-		
+
 		Local<Object> obj = templ->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
 		obj->SetInternalField(0, External::New(isolate, shader));
 		obj->Set(String::NewFromUtf8(isolate, "name"), args[1]);
@@ -427,14 +431,14 @@ namespace {
 		Kore::Shader* shader = (Kore::Shader*)field->Value();
 		delete shader;
 	}
-	
+
 	void krom_create_program(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Kore::Program* program = new Kore::Program();
-		
+
 		Local<ObjectTemplate> templ = ObjectTemplate::New(isolate);
 		templ->SetInternalFieldCount(8);
-		
+
 		Local<Object> obj = templ->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
 		obj->SetInternalField(0, External::New(isolate, program));
 		args.GetReturnValue().Set(obj);
@@ -447,17 +451,17 @@ namespace {
 		Kore::Program* program = (Kore::Program*)progfield->Value();
 		delete program;
 	}
-	
+
 	void recompileProgram(Local<Object> projobj) {
 		Local<External> structsfield = Local<External>::Cast(projobj->GetInternalField(1));
 		Kore::VertexStructure** structures = (Kore::VertexStructure**)structsfield->Value();
-		
+
 		Local<External> sizefield = Local<External>::Cast(projobj->GetInternalField(2));
 		int32_t size = sizefield->ToInt32()->Value();
 
 		Local<External> vsfield = Local<External>::Cast(projobj->GetInternalField(3));
 		Kore::Shader* vs = (Kore::Shader*)vsfield->Value();
-		
+
 		Local<External> fsfield = Local<External>::Cast(projobj->GetInternalField(4));
 		Kore::Shader* fs = (Kore::Shader*)fsfield->Value();
 
@@ -482,20 +486,20 @@ namespace {
 			Kore::Shader* tes = (Kore::Shader*)tesfield->Value();
 			program->setTessellationEvaluationShader(tes);
 		}
-		
+
 		program->link(structures, size);
-		
+
 		projobj->SetInternalField(0, External::New(isolate, program));
 	}
-	
+
 	void krom_compile_program(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
-		
+
 		Local<Object> progobj = args[0]->ToObject();
-		
+
 		Local<External> progfield = Local<External>::Cast(progobj->GetInternalField(0));
 		Kore::Program* program = (Kore::Program*)progfield->Value();
-		
+
 		Kore::VertexStructure s0, s1, s2, s3;
 		Kore::VertexStructure* structures[4] = { &s0, &s1, &s2, &s3 };
 
@@ -514,20 +518,20 @@ namespace {
 				structures[i1]->add(name, convertVertexData(data));
 			}
 		}
-		
+
 		progobj->SetInternalField(1, External::New(isolate, structures));
 		progobj->SetInternalField(2, External::New(isolate, &size));
-		
+
 		Local<External> vsfield = Local<External>::Cast(args[6]->ToObject()->GetInternalField(0));
 		Kore::Shader* vertexShader = (Kore::Shader*)vsfield->Value();
 		progobj->SetInternalField(3, External::New(isolate, vertexShader));
 		progobj->Set(String::NewFromUtf8(isolate, "vsname"), args[6]->ToObject()->Get(String::NewFromUtf8(isolate, "name")));
-		
+
 		Local<External> fsfield = Local<External>::Cast(args[7]->ToObject()->GetInternalField(0));
 		Kore::Shader* fragmentShader = (Kore::Shader*)fsfield->Value();
 		progobj->SetInternalField(4, External::New(isolate, fragmentShader));
 		progobj->Set(String::NewFromUtf8(isolate, "fsname"), args[7]->ToObject()->Get(String::NewFromUtf8(isolate, "name")));
-		
+
 		program->setVertexShader(vertexShader);
 		program->setFragmentShader(fragmentShader);
 
@@ -559,37 +563,37 @@ namespace {
 	}
 
 	std::string shadersdir;
-	
+
 	void krom_set_program(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Local<Object> progobj = args[0]->ToObject();
 		Local<External> progfield = Local<External>::Cast(progobj->GetInternalField(0));
 		Kore::Program* program = (Kore::Program*)progfield->Value();
-		
+
 		Local<Value> vsnameobj = progobj->Get(String::NewFromUtf8(isolate, "vsname"));
 		String::Utf8Value vsname(vsnameobj);
-		
+
 		Local<Value> fsnameobj = progobj->Get(String::NewFromUtf8(isolate, "fsname"));
 		String::Utf8Value fsname(fsnameobj);
-		
+
 		bool shaderChanged = false;
-		
+
 		if (shaderChanges[*vsname]) {
 			shaderChanged = true;
 			Kore::log(Kore::Info, "Reloading shader %s.", *vsname);
 			std::string filename = shaderFileNames[*vsname];
-			std::ifstream input((shadersdir + "/" + filename).c_str(), std::ios::binary );
+			std::ifstream input((shadersdir + "/" + filename).c_str(), std::ios::binary);
 			std::vector<char> buffer((std::istreambuf_iterator<char>(input)), (std::istreambuf_iterator<char>()));
 			Kore::Shader* vertexShader = new Kore::Shader(buffer.data(), (int)buffer.size(), Kore::VertexShader);
 			progobj->SetInternalField(3, External::New(isolate, vertexShader));
 			shaderChanges[*vsname] = false;
 		}
-		
+
 		if (shaderChanges[*fsname]) {
 			shaderChanged = true;
 			Kore::log(Kore::Info, "Reloading shader %s.", *fsname);
 			std::string filename = shaderFileNames[*fsname];
-			std::ifstream input((shadersdir + "/" + filename).c_str(), std::ios::binary );
+			std::ifstream input((shadersdir + "/" + filename).c_str(), std::ios::binary);
 			std::vector<char> buffer((std::istreambuf_iterator<char>(input)), (std::istreambuf_iterator<char>()));
 			Kore::Shader* fragmentShader = new Kore::Shader(buffer.data(), (int)buffer.size(), Kore::FragmentShader);
 			progobj->SetInternalField(4, External::New(isolate, fragmentShader));
@@ -603,7 +607,7 @@ namespace {
 				shaderChanged = true;
 				Kore::log(Kore::Info, "Reloading shader %s.", *gsname);
 				std::string filename = shaderFileNames[*gsname];
-				std::ifstream input((shadersdir + "/" + filename).c_str(), std::ios::binary );
+				std::ifstream input((shadersdir + "/" + filename).c_str(), std::ios::binary);
 				std::vector<char> buffer((std::istreambuf_iterator<char>(input)), (std::istreambuf_iterator<char>()));
 				Kore::Shader* geometryShader = new Kore::Shader(buffer.data(), (int)buffer.size(), Kore::GeometryShader);
 				progobj->SetInternalField(5, External::New(isolate, geometryShader));
@@ -618,7 +622,7 @@ namespace {
 				shaderChanged = true;
 				Kore::log(Kore::Info, "Reloading shader %s.", *tcsname);
 				std::string filename = shaderFileNames[*tcsname];
-				std::ifstream input((shadersdir + "/" + filename).c_str(), std::ios::binary );
+				std::ifstream input((shadersdir + "/" + filename).c_str(), std::ios::binary);
 				std::vector<char> buffer((std::istreambuf_iterator<char>(input)), (std::istreambuf_iterator<char>()));
 				Kore::Shader* tessellationControlShader = new Kore::Shader(buffer.data(), (int)buffer.size(), Kore::TessellationControlShader);
 				progobj->SetInternalField(6, External::New(isolate, tessellationControlShader));
@@ -633,32 +637,32 @@ namespace {
 				shaderChanged = true;
 				Kore::log(Kore::Info, "Reloading shader %s.", *tesname);
 				std::string filename = shaderFileNames[*tesname];
-				std::ifstream input((shadersdir + "/" + filename).c_str(), std::ios::binary );
+				std::ifstream input((shadersdir + "/" + filename).c_str(), std::ios::binary);
 				std::vector<char> buffer((std::istreambuf_iterator<char>(input)), (std::istreambuf_iterator<char>()));
 				Kore::Shader* tessellationEvaluationShader = new Kore::Shader(buffer.data(), (int)buffer.size(), Kore::TessellationEvaluationShader);
 				progobj->SetInternalField(7, External::New(isolate, tessellationEvaluationShader));
 				shaderChanges[*tesname] = false;
 			}
 		}
-		
+
 		if (shaderChanged) {
 			recompileProgram(progobj);
 			Local<External> progfield = Local<External>::Cast(progobj->GetInternalField(0));
 			program = (Kore::Program*)progfield->Value();
 		}
-		
+
 		program->set();
 	}
-	
+
 	void krom_load_image(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		String::Utf8Value utf8_value(args[0]);
 		bool readable = args[1]->ToBoolean()->Value();
 		Kore::Texture* texture = new Kore::Texture(*utf8_value, readable);
-		
+
 		Local<ObjectTemplate> templ = ObjectTemplate::New(isolate);
 		templ->SetInternalFieldCount(1);
-		
+
 		Local<Object> obj = templ->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
 		obj->SetInternalField(0, External::New(isolate, texture));
 		obj->Set(String::NewFromUtf8(isolate, "width"), Int32::New(isolate, texture->width));
@@ -687,18 +691,18 @@ namespace {
 			delete renderTarget;
 		}
 	}
-	
+
 	void krom_load_sound(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
-		
+
 	}
-	
+
 	void krom_load_blob(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		String::Utf8Value utf8_value(args[0]);
 		Kore::FileReader reader;
 		reader.open(*utf8_value);
-		
+
 		Local<ArrayBuffer> buffer = ArrayBuffer::New(isolate, reader.size());
 		ArrayBuffer::Contents contents = buffer->Externalize();
 
@@ -707,49 +711,49 @@ namespace {
 		for (int i = 0; i < reader.size(); ++i) {
 			to[i] = from[i];
 		}
-		
+
 		reader.close();
-		
+
 		args.GetReturnValue().Set(buffer);
 	}
-	
+
 	void krom_get_constant_location(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Local<External> progfield = Local<External>::Cast(args[0]->ToObject()->GetInternalField(0));
 		Kore::Program* program = (Kore::Program*)progfield->Value();
-		
+
 		String::Utf8Value utf8_value(args[1]);
 		Kore::ConstantLocation location = program->getConstantLocation(*utf8_value);
-		
+
 		Local<ObjectTemplate> templ = ObjectTemplate::New(isolate);
 		templ->SetInternalFieldCount(1);
-		
+
 		Local<Object> obj = templ->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
 		obj->SetInternalField(0, External::New(isolate, new Kore::ConstantLocation(location)));
 		args.GetReturnValue().Set(obj);
 	}
-	
+
 	void krom_get_texture_unit(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Local<External> progfield = Local<External>::Cast(args[0]->ToObject()->GetInternalField(0));
 		Kore::Program* program = (Kore::Program*)progfield->Value();
-		
+
 		String::Utf8Value utf8_value(args[1]);
 		Kore::TextureUnit unit = program->getTextureUnit(*utf8_value);
-		
+
 		Local<ObjectTemplate> templ = ObjectTemplate::New(isolate);
 		templ->SetInternalFieldCount(1);
-		
+
 		Local<Object> obj = templ->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
 		obj->SetInternalField(0, External::New(isolate, new Kore::TextureUnit(unit)));
 		args.GetReturnValue().Set(obj);
 	}
-	
+
 	void krom_set_texture(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Local<External> unitfield = Local<External>::Cast(args[0]->ToObject()->GetInternalField(0));
 		Kore::TextureUnit* unit = (Kore::TextureUnit*)unitfield->Value();
-		
+
 		if (args[1]->IsNull() || args[1]->IsUndefined()) return;
 
 		Local<Object> image = args[1]->ToObject();
@@ -782,7 +786,7 @@ namespace {
 		HandleScope scope(args.GetIsolate());
 		Local<External> unitfield = Local<External>::Cast(args[0]->ToObject()->GetInternalField(0));
 		Kore::TextureUnit* unit = (Kore::TextureUnit*)unitfield->Value();
-		
+
 		if (args[1]->IsNull() || args[1]->IsUndefined()) return;
 
 		Local<Object> image = args[1]->ToObject();
@@ -829,7 +833,7 @@ namespace {
 			return Kore::LinearMipFilter;
 		}
 	}
-	
+
 	void krom_set_texture_parameters(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Local<External> unitfield = Local<External>::Cast(args[0]->ToObject()->GetInternalField(0));
@@ -848,7 +852,7 @@ namespace {
 		int32_t value = args[1]->ToInt32()->Value();
 		Kore::Graphics::setBool(*location, value != 0);
 	}
-	
+
 	void krom_set_int(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Local<External> locationfield = Local<External>::Cast(args[0]->ToObject()->GetInternalField(0));
@@ -856,7 +860,7 @@ namespace {
 		int32_t value = args[1]->ToInt32()->Value();
 		Kore::Graphics::setInt(*location, value);
 	}
-	
+
 	void krom_set_float(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Local<External> locationfield = Local<External>::Cast(args[0]->ToObject()->GetInternalField(0));
@@ -864,7 +868,7 @@ namespace {
 		float value = (float)args[1]->ToNumber()->Value();
 		Kore::Graphics::setFloat(*location, value);
 	}
-	
+
 	void krom_set_float2(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Local<External> locationfield = Local<External>::Cast(args[0]->ToObject()->GetInternalField(0));
@@ -873,7 +877,7 @@ namespace {
 		float value2 = (float)args[2]->ToNumber()->Value();
 		Kore::Graphics::setFloat2(*location, value1, value2);
 	}
-	
+
 	void krom_set_float3(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Local<External> locationfield = Local<External>::Cast(args[0]->ToObject()->GetInternalField(0));
@@ -883,7 +887,7 @@ namespace {
 		float value3 = (float)args[3]->ToNumber()->Value();
 		Kore::Graphics::setFloat3(*location, value1, value2, value3);
 	}
-	
+
 	void krom_set_float4(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Local<External> locationfield = Local<External>::Cast(args[0]->ToObject()->GetInternalField(0));
@@ -899,7 +903,7 @@ namespace {
 		HandleScope scope(args.GetIsolate());
 		Local<External> locationfield = Local<External>::Cast(args[0]->ToObject()->GetInternalField(0));
 		Kore::ConstantLocation* location = (Kore::ConstantLocation*)locationfield->Value();
-		
+
 		Local<Float32Array> f32array = Local<Float32Array>::Cast(args[1]);
 		ArrayBuffer::Contents content;
 		if (f32array->Buffer()->IsExternal()) content = f32array->Buffer()->GetContents();
@@ -908,12 +912,12 @@ namespace {
 
 		Kore::Graphics::setFloats(*location, from, content.ByteLength() / 4);
 	}
-	
+
 	void krom_set_matrix(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Local<External> locationfield = Local<External>::Cast(args[0]->ToObject()->GetInternalField(0));
 		Kore::ConstantLocation* location = (Kore::ConstantLocation*)locationfield->Value();
-		
+
 		Local<Object> matrix = args[1]->ToObject();
 		float _00 = matrix->Get(String::NewFromUtf8(isolate, "_00"))->ToNumber()->Value();
 		float _01 = matrix->Get(String::NewFromUtf8(isolate, "_01"))->ToNumber()->Value();
@@ -931,16 +935,16 @@ namespace {
 		float _31 = matrix->Get(String::NewFromUtf8(isolate, "_31"))->ToNumber()->Value();
 		float _32 = matrix->Get(String::NewFromUtf8(isolate, "_32"))->ToNumber()->Value();
 		float _33 = matrix->Get(String::NewFromUtf8(isolate, "_33"))->ToNumber()->Value();
-		
+
 		Kore::mat4 m;
 		m.Set(0, 0, _00); m.Set(1, 0, _01); m.Set(2, 0, _02); m.Set(3, 0, _03);
 		m.Set(0, 1, _10); m.Set(1, 1, _11); m.Set(2, 1, _12); m.Set(3, 1, _13);
 		m.Set(0, 2, _20); m.Set(1, 2, _21); m.Set(2, 2, _22); m.Set(3, 2, _23);
 		m.Set(0, 3, _30); m.Set(1, 3, _31); m.Set(2, 3, _32); m.Set(3, 3, _33);
-		
+
 		Kore::Graphics::setMatrix(*location, m);
 	}
-	
+
 	void krom_get_time(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		args.GetReturnValue().Set(Number::New(isolate, Kore::System::time()));
@@ -963,14 +967,14 @@ namespace {
 		int windowId = args[0]->ToInt32()->Value();
 		args.GetReturnValue().Set(Int32::New(isolate, Kore::System::screenDpi()));
 	}
-	
+
 	void krom_create_render_target(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Kore::RenderTarget* renderTarget = new Kore::RenderTarget(args[0]->ToInt32()->Value(), args[1]->ToInt32()->Value(), args[2]->ToInt32()->Value(), false, (Kore::RenderTargetFormat)args[3]->ToInt32()->Value(), args[4]->ToInt32()->Value());
-		
+
 		Local<ObjectTemplate> templ = ObjectTemplate::New(isolate);
 		templ->SetInternalFieldCount(1);
-		
+
 		Local<Object> obj = templ->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
 		obj->SetInternalField(0, External::New(isolate, renderTarget));
 		obj->Set(String::NewFromUtf8(isolate, "width"), Int32::New(isolate, renderTarget->width));
@@ -981,10 +985,10 @@ namespace {
 	void krom_create_texture(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		Kore::Texture* texture = new Kore::Texture(args[0]->ToInt32()->Value(), args[1]->ToInt32()->Value(), (Kore::Image::Format)args[2]->ToInt32()->Value(), false);
-		
+
 		Local<ObjectTemplate> templ = ObjectTemplate::New(isolate);
 		templ->SetInternalFieldCount(1);
-		
+
 		Local<Object> obj = templ->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
 		obj->SetInternalField(0, External::New(isolate, texture));
 		obj->Set(String::NewFromUtf8(isolate, "width"), Int32::New(isolate, texture->width));
@@ -997,7 +1001,7 @@ namespace {
 
 		Local<External> field = Local<External>::Cast(args[0]->ToObject()->GetInternalField(0));
 		Kore::Texture* texture = (Kore::Texture*)field->Value();
-		
+
 		Local<ArrayBuffer> buffer = Local<ArrayBuffer>::Cast(args[1]);
 		ArrayBuffer::Contents content = buffer->Externalize();
 
@@ -1020,7 +1024,7 @@ namespace {
 		HandleScope scope(args.GetIsolate());
 		Local<External> field = Local<External>::Cast(args[0]->ToObject()->GetInternalField(0));
 		Kore::Texture* texture = (Kore::Texture*)field->Value();
-		
+
 		Local<Object> jsarray = args[1]->ToObject();
 		int32_t length = jsarray->Get(String::NewFromUtf8(isolate, "length"))->ToInt32()->Value();
 		for (int32_t i = 0; i < length; ++i) {
@@ -1039,7 +1043,7 @@ namespace {
 		Kore::RenderTarget* sourceTarget = (Kore::RenderTarget*)sourcefield->Value();
 		renderTarget->setDepthStencilFrom(sourceTarget);
 	}
-	
+
 	void krom_viewport(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 
@@ -1155,12 +1159,12 @@ namespace {
 			return Kore::DecrementWrap;
 		case 7:
 		default:
-			return Kore::Invert;	
+			return Kore::Invert;
 		}
 	}
 
 	void krom_set_stencil_parameters(const FunctionCallbackInfo<Value>& args) {
-		HandleScope scope(args.GetIsolate());		
+		HandleScope scope(args.GetIsolate());
 		int compareMode = args[0]->ToInt32()->Int32Value();
 		int bothPass = args[1]->ToInt32()->Int32Value();
 		int depthFail = args[2]->ToInt32()->Int32Value();
@@ -1172,7 +1176,7 @@ namespace {
 	}
 
 	void krom_set_blending_mode(const FunctionCallbackInfo<Value>& args) {
-		HandleScope scope(args.GetIsolate());		
+		HandleScope scope(args.GetIsolate());
 		int source = args[0]->ToInt32()->Int32Value();
 		int destination = args[1]->ToInt32()->Int32Value();
 		int alphaSource = args[2]->ToInt32()->Int32Value();
@@ -1187,7 +1191,7 @@ namespace {
 	}
 
 	void krom_set_color_mask(const FunctionCallbackInfo<Value>& args) {
-		HandleScope scope(args.GetIsolate());		
+		HandleScope scope(args.GetIsolate());
 		bool red = args[0]->ToBoolean()->Value();
 		bool green = args[1]->ToBoolean()->Value();
 		bool blue = args[2]->ToBoolean()->Value();
@@ -1197,14 +1201,14 @@ namespace {
 
 	void krom_render_targets_inverted_y(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
-		
+
 #ifdef OPENGL
 		args.GetReturnValue().Set(Boolean::New(isolate, true));
 #else
 		args.GetReturnValue().Set(Boolean::New(isolate, false));
 #endif
 	}
-	
+
 	void krom_begin(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
 		if (args[0]->IsNull() || args[0]->IsUndefined()) {
@@ -1214,7 +1218,7 @@ namespace {
 			Local<Object> obj = args[0]->ToObject()->Get(String::NewFromUtf8(isolate, "renderTarget_"))->ToObject();
 			Local<External> rtfield = Local<External>::Cast(obj->GetInternalField(0));
 			Kore::RenderTarget* renderTarget = (Kore::RenderTarget*)rtfield->Value();
-			
+
 			if (args[1]->IsNull() || args[1]->IsUndefined()) {
 				Kore::Graphics::setRenderTarget(renderTarget, 0, 0);
 			}
@@ -1231,12 +1235,12 @@ namespace {
 			}
 		}
 	}
-	
+
 	void krom_end(const FunctionCallbackInfo<Value>& args) {
 		HandleScope scope(args.GetIsolate());
-		
+
 	}
-	
+
 	void startV8() {
 #ifdef SYS_OSX
 		char filepath[256];
@@ -1263,7 +1267,7 @@ namespace {
 		HandleScope handle_scope(isolate);
 
 		Local<ObjectTemplate> krom = ObjectTemplate::New(isolate);
-        krom->Set(String::NewFromUtf8(isolate, "init"), FunctionTemplate::New(isolate, krom_init));
+		krom->Set(String::NewFromUtf8(isolate, "init"), FunctionTemplate::New(isolate, krom_init));
 		krom->Set(String::NewFromUtf8(isolate, "log"), FunctionTemplate::New(isolate, LogCallback));
 		krom->Set(String::NewFromUtf8(isolate, "clear"), FunctionTemplate::New(isolate, graphics_clear));
 		krom->Set(String::NewFromUtf8(isolate, "setCallback"), FunctionTemplate::New(isolate, krom_set_callback));
@@ -1338,7 +1342,7 @@ namespace {
 		Local<Context> context = Context::New(isolate, NULL, global);
 		globalContext.Reset(isolate, context);
 	}
-	
+
 	bool startKrom(char* scriptfile) {
 		Isolate::Scope isolate_scope(isolate);
 		HandleScope handle_scope(isolate);
@@ -1349,23 +1353,23 @@ namespace {
 		Local<String> filename = String::NewFromUtf8(isolate, "krom.js", NewStringType::kNormal).ToLocalChecked();
 
 		TryCatch try_catch(isolate);
-		
+
 		Local<Script> compiled_script = Script::Compile(source, filename);
-		
+
 		Local<Value> result;
 		if (!compiled_script->Run(context).ToLocal(&result)) {
 			v8::String::Utf8Value stack_trace(try_catch.StackTrace());
 			Kore::log(Kore::Error, "Trace: %s", *stack_trace);
 			return false;
 		}
-	
+
 		return true;
 	}
-	
+
 	bool codechanged = false;
 
 	void parseCode();
-	
+
 	void runV8() {
 		// if (v8paused) return;
 
@@ -1373,13 +1377,13 @@ namespace {
 			parseCode();
 			codechanged = false;
 		}
-		
+
 		Isolate::Scope isolate_scope(isolate);
 		v8::MicrotasksScope microtasks_scope(isolate, v8::MicrotasksScope::kRunMicrotasks);
 		HandleScope handle_scope(isolate);
 		Local<Context> context = Local<Context>::New(isolate, globalContext);
 		Context::Scope context_scope(context);
-		
+
 		TryCatch try_catch(isolate);
 		Local<v8::Function> func = Local<v8::Function>::New(isolate, updateFunction);
 		Local<Value> result;
@@ -1401,7 +1405,7 @@ namespace {
 		V8::ShutdownPlatform();
 		delete plat;
 	}
-	
+
 	void update() {
 		Kore::Graphics::begin();
 		runV8();
@@ -1409,96 +1413,96 @@ namespace {
 		// Kore::Graphics::end();
 		//Kore::Graphics::swapBuffers();
 	}
-	
+
 	void keyDown(Kore::KeyCode code, wchar_t character) {
 		Isolate::Scope isolate_scope(isolate);
 		HandleScope handle_scope(isolate);
 		v8::Local<v8::Context> context = v8::Local<v8::Context>::New(isolate, globalContext);
 		Context::Scope context_scope(context);
-		
+
 		TryCatch try_catch(isolate);
 		v8::Local<v8::Function> func = v8::Local<v8::Function>::New(isolate, keyboardDownFunction);
 		Local<Value> result;
 		const int argc = 2;
-		Local<Value> argv[argc] = {Int32::New(isolate, (int)code), Int32::New(isolate, (int)character)};
+		Local<Value> argv[argc] = { Int32::New(isolate, (int)code), Int32::New(isolate, (int)character) };
 		if (!func->Call(context, context->Global(), argc, argv).ToLocal(&result)) {
 			v8::String::Utf8Value stack_trace(try_catch.StackTrace());
 			Kore::log(Kore::Error, "Trace: %s", *stack_trace);
 		}
 	}
-	
+
 	void keyUp(Kore::KeyCode code, wchar_t character) {
 		Isolate::Scope isolate_scope(isolate);
 		HandleScope handle_scope(isolate);
 		v8::Local<v8::Context> context = v8::Local<v8::Context>::New(isolate, globalContext);
 		Context::Scope context_scope(context);
-		
+
 		TryCatch try_catch(isolate);
 		v8::Local<v8::Function> func = v8::Local<v8::Function>::New(isolate, keyboardUpFunction);
 		Local<Value> result;
 		const int argc = 2;
-		Local<Value> argv[argc] = {Int32::New(isolate, (int)code), Int32::New(isolate, (int)character)};
+		Local<Value> argv[argc] = { Int32::New(isolate, (int)code), Int32::New(isolate, (int)character) };
 		if (!func->Call(context, context->Global(), argc, argv).ToLocal(&result)) {
 			v8::String::Utf8Value stack_trace(try_catch.StackTrace());
 			Kore::log(Kore::Error, "Trace: %s", *stack_trace);
 		}
 	}
-	
+
 	void mouseMove(int window, int x, int y, int mx, int my) {
 		Isolate::Scope isolate_scope(isolate);
 		HandleScope handle_scope(isolate);
 		v8::Local<v8::Context> context = v8::Local<v8::Context>::New(isolate, globalContext);
 		Context::Scope context_scope(context);
-		
+
 		TryCatch try_catch(isolate);
 		v8::Local<v8::Function> func = v8::Local<v8::Function>::New(isolate, mouseMoveFunction);
 		Local<Value> result;
 		const int argc = 4;
-		Local<Value> argv[argc] = {Int32::New(isolate, x), Int32::New(isolate, y), Int32::New(isolate, mx), Int32::New(isolate, my)};
+		Local<Value> argv[argc] = { Int32::New(isolate, x), Int32::New(isolate, y), Int32::New(isolate, mx), Int32::New(isolate, my) };
 		if (!func->Call(context, context->Global(), argc, argv).ToLocal(&result)) {
 			v8::String::Utf8Value stack_trace(try_catch.StackTrace());
 			Kore::log(Kore::Error, "Trace: %s", *stack_trace);
 		}
 	}
-	
+
 	void mouseDown(int window, int button, int x, int y) {
 		Isolate::Scope isolate_scope(isolate);
 		HandleScope handle_scope(isolate);
 		v8::Local<v8::Context> context = v8::Local<v8::Context>::New(isolate, globalContext);
 		Context::Scope context_scope(context);
-		
+
 		TryCatch try_catch(isolate);
 		v8::Local<v8::Function> func = v8::Local<v8::Function>::New(isolate, mouseDownFunction);
 		Local<Value> result;
 		const int argc = 3;
-		Local<Value> argv[argc] = {Int32::New(isolate, button), Int32::New(isolate, x), Int32::New(isolate, y)};
+		Local<Value> argv[argc] = { Int32::New(isolate, button), Int32::New(isolate, x), Int32::New(isolate, y) };
 		if (!func->Call(context, context->Global(), argc, argv).ToLocal(&result)) {
 			v8::String::Utf8Value stack_trace(try_catch.StackTrace());
 			Kore::log(Kore::Error, "Trace: %s", *stack_trace);
 		}
 	}
-	
+
 	void mouseUp(int window, int button, int x, int y) {
 		Isolate::Scope isolate_scope(isolate);
 		HandleScope handle_scope(isolate);
 		v8::Local<v8::Context> context = v8::Local<v8::Context>::New(isolate, globalContext);
 		Context::Scope context_scope(context);
-		
+
 		TryCatch try_catch(isolate);
 		v8::Local<v8::Function> func = v8::Local<v8::Function>::New(isolate, mouseUpFunction);
 		Local<Value> result;
 		const int argc = 3;
-		Local<Value> argv[argc] = {Int32::New(isolate, button), Int32::New(isolate, x), Int32::New(isolate, y)};
+		Local<Value> argv[argc] = { Int32::New(isolate, button), Int32::New(isolate, x), Int32::New(isolate, y) };
 		if (!func->Call(context, context->Global(), argc, argv).ToLocal(&result)) {
 			v8::String::Utf8Value stack_trace(try_catch.StackTrace());
 			Kore::log(Kore::Error, "Trace: %s", *stack_trace);
 		}
 	}
-	
+
 	bool startsWith(std::string str, std::string start) {
 		return str.substr(0, start.size()) == start;
 	}
-	
+
 	bool endsWith(std::string str, std::string end) {
 		if (str.size() < end.size()) return false;
 		for (size_t i = str.size() - end.size(); i < str.size(); ++i) {
@@ -1506,16 +1510,16 @@ namespace {
 		}
 		return true;
 	}
-	
+
 	std::string assetsdir;
 	std::string kromjs;
-	
+
 	struct Function {
 		std::string name;
 		std::vector<std::string> parameters;
 		std::string body;
 	};
-	
+
 	struct Klass {
 		std::string name;
 		std::string internal_name;
@@ -1530,145 +1534,145 @@ namespace {
 		ParseMethods,
 		ParseMethod
 	};
-	
-	void parseCode() {
-	// 	int types = 0;
-	// 	ParseMode mode = ParseRegular;
-	// 	Klass* currentClass = nullptr;
-	// 	Function* currentFunction = nullptr;
-	// 	std::string currentBody;
-	// 	int brackets = 1;
-		
-	// 	std::ifstream infile(kromjs.c_str());
-	// 	std::string line;
-	// 	while (std::getline(infile, line)) {
-	// 		switch (mode) {
-	// 			case ParseRegular: {
-	// 				if (endsWith(line, ".prototype = {")) { // parse methods
-	// 					mode = ParseMethods;
-	// 				}
-	// 				// hxClasses["BigBlock"] = BigBlock;
-	// 				// var BigBlock = $hxClasses["BigBlock"] = function(xx,yy) {
-	// 				else if (line.find("$hxClasses[\"") != std::string::npos) { //(startsWith(line, "$hxClasses[\"")) {
-	// 					size_t first = line.find('\"');
-	// 					size_t last = line.find_last_of('\"');
-	// 					std::string name = line.substr(first + 1, last - first - 1);
-	// 					first = line.find(' ');
-	// 					last = line.find(' ', first + 1);
-	// 					std::string internal_name = line.substr(first + 1, last - first - 1);
-	// 					if (classes.find(internal_name) == classes.end()) {
-	// 						//printf("Found type %s.\n", internal_name.c_str());
-	// 						currentClass = new Klass;
-	// 						currentClass->name = name;
-	// 						currentClass->internal_name = internal_name;
-	// 						classes[internal_name] = currentClass;
-	// 						++types;
-	// 					}
-	// 					else {
-	// 						currentClass = classes[internal_name];
-	// 					}
-	// 				}
-	// 				break;
-	// 			}
-	// 			case ParseMethods: {
-	// 				// ,draw: function(g) {
-	// 				if (endsWith(line, "{")) {
-	// 					size_t first = 0;
-	// 					while (line[first] == ' ' || line[first] == '\t' || line[first] == ',') {
-	// 						++first;
-	// 					}
-	// 					size_t last = line.find(':');
-	// 					std::string methodname = line.substr(first, last - first);
-	// 					if (currentClass->methods.find(methodname) == currentClass->methods.end()) {
-	// 						currentFunction = new Function;
-	// 						currentFunction->name = methodname;
-	// 						first = line.find('(') + 1;
-	// 						last = line.find_last_of(')');
-	// 						size_t last_param_start = first;
-	// 						for (size_t i = first; i <= last; ++i) {
-	// 							if (line[i] == ',') {
-	// 								currentFunction->parameters.push_back(line.substr(last_param_start, i - last_param_start));
-	// 								last_param_start = i + 1;
-	// 							}
-	// 							if (line[i] == ')') {
-	// 								currentFunction->parameters.push_back(line.substr(last_param_start, i - last_param_start));
-	// 								break;
-	// 							}
-	// 						}
-						
-	// 						//printf("Found method %s.\n", methodname.c_str());
-	// 						currentClass->methods[methodname] = currentFunction;
-	// 					}
-	// 					else {
-	// 						currentFunction = currentClass->methods[methodname];
-	// 					}
-	// 					mode = ParseMethod;
-	// 					currentBody = "";
-	// 					brackets = 1;
-	// 				}
-	// 				else if (endsWith(line, "};")) {
-	// 					mode = ParseRegular;
-	// 				}
-	// 				break;
-	// 			}
-	// 			case ParseMethod: {
-	// 				if (line.find('{') != std::string::npos) ++brackets;
-	// 				if (line.find('}') != std::string::npos) --brackets;
-	// 				if (brackets > 0) {
-	// 					currentBody += line + " ";
-	// 				}
-	// 				else {
-	// 					if (currentFunction->body == "") {
-	// 						currentFunction->body = currentBody;
-	// 					}
-	// 					else if (currentFunction->body != currentBody) {
-	// 						currentFunction->body = currentBody;
-							
-	// 						Isolate::Scope isolate_scope(isolate);
-	// 						HandleScope handle_scope(isolate);
-	// 						v8::Local<v8::Context> context = v8::Local<v8::Context>::New(isolate, globalContext);
-	// 						Context::Scope context_scope(context);
-							
-	// 						// BlocksFromHeaven.prototype.loadingFinished = new Function([a, b], "lots of text;");
-	// 						std::string script;
-	// 						script += currentClass->internal_name;
-	// 						script += ".prototype.";
-	// 						script += currentFunction->name;
-	// 						script += " = new Function([";
-	// 						for (size_t i = 0; i < currentFunction->parameters.size(); ++i) {
-	// 							script += "\"" + currentFunction->parameters[i] + "\"";
-	// 							if (i < currentFunction->parameters.size() - 1) script += ",";
-	// 						}
-	// 						script += "], \"";
-	// 						script += currentFunction->body;
-	// 						script += "\");";
-							
-	// 						// Kore::log(Kore::Info, "Script:\n%s\n", script.c_str());
-	// 						Kore::log(Kore::Info, "Patching method %s in class %s.", currentFunction->name.c_str(), currentClass->name.c_str());
-							
-	// 						Local<String> source = String::NewFromUtf8(isolate, script.c_str(), NewStringType::kNormal).ToLocalChecked();
-							
-	// 						TryCatch try_catch(isolate);
-							
-	// 						Local<Script> compiled_script;
-	// 						if (!Script::Compile(context, source).ToLocal(&compiled_script)) {
-	// 							v8::String::Utf8Value stack_trace(try_catch.StackTrace());
-	// 							Kore::log(Kore::Error, "Trace: %s", *stack_trace);
-	// 						}
 
-	// 						Local<Value> result;
-	// 						if (!compiled_script->Run(context).ToLocal(&result)) {
-	// 							v8::String::Utf8Value stack_trace(try_catch.StackTrace());
-	// 							Kore::log(Kore::Error, "Trace: %s", *stack_trace);
-	// 						}
-	// 					}
-	// 					mode = ParseMethods;
-	// 				}
-	// 				break;
-	// 			}
-	// 		}
-	// 	}
-	// 	Kore::log(Kore::Info, "%i new types found.", types);
+	void parseCode() {
+		// 	int types = 0;
+		// 	ParseMode mode = ParseRegular;
+		// 	Klass* currentClass = nullptr;
+		// 	Function* currentFunction = nullptr;
+		// 	std::string currentBody;
+		// 	int brackets = 1;
+
+		// 	std::ifstream infile(kromjs.c_str());
+		// 	std::string line;
+		// 	while (std::getline(infile, line)) {
+		// 		switch (mode) {
+		// 			case ParseRegular: {
+		// 				if (endsWith(line, ".prototype = {")) { // parse methods
+		// 					mode = ParseMethods;
+		// 				}
+		// 				// hxClasses["BigBlock"] = BigBlock;
+		// 				// var BigBlock = $hxClasses["BigBlock"] = function(xx,yy) {
+		// 				else if (line.find("$hxClasses[\"") != std::string::npos) { //(startsWith(line, "$hxClasses[\"")) {
+		// 					size_t first = line.find('\"');
+		// 					size_t last = line.find_last_of('\"');
+		// 					std::string name = line.substr(first + 1, last - first - 1);
+		// 					first = line.find(' ');
+		// 					last = line.find(' ', first + 1);
+		// 					std::string internal_name = line.substr(first + 1, last - first - 1);
+		// 					if (classes.find(internal_name) == classes.end()) {
+		// 						//printf("Found type %s.\n", internal_name.c_str());
+		// 						currentClass = new Klass;
+		// 						currentClass->name = name;
+		// 						currentClass->internal_name = internal_name;
+		// 						classes[internal_name] = currentClass;
+		// 						++types;
+		// 					}
+		// 					else {
+		// 						currentClass = classes[internal_name];
+		// 					}
+		// 				}
+		// 				break;
+		// 			}
+		// 			case ParseMethods: {
+		// 				// ,draw: function(g) {
+		// 				if (endsWith(line, "{")) {
+		// 					size_t first = 0;
+		// 					while (line[first] == ' ' || line[first] == '\t' || line[first] == ',') {
+		// 						++first;
+		// 					}
+		// 					size_t last = line.find(':');
+		// 					std::string methodname = line.substr(first, last - first);
+		// 					if (currentClass->methods.find(methodname) == currentClass->methods.end()) {
+		// 						currentFunction = new Function;
+		// 						currentFunction->name = methodname;
+		// 						first = line.find('(') + 1;
+		// 						last = line.find_last_of(')');
+		// 						size_t last_param_start = first;
+		// 						for (size_t i = first; i <= last; ++i) {
+		// 							if (line[i] == ',') {
+		// 								currentFunction->parameters.push_back(line.substr(last_param_start, i - last_param_start));
+		// 								last_param_start = i + 1;
+		// 							}
+		// 							if (line[i] == ')') {
+		// 								currentFunction->parameters.push_back(line.substr(last_param_start, i - last_param_start));
+		// 								break;
+		// 							}
+		// 						}
+
+		// 						//printf("Found method %s.\n", methodname.c_str());
+		// 						currentClass->methods[methodname] = currentFunction;
+		// 					}
+		// 					else {
+		// 						currentFunction = currentClass->methods[methodname];
+		// 					}
+		// 					mode = ParseMethod;
+		// 					currentBody = "";
+		// 					brackets = 1;
+		// 				}
+		// 				else if (endsWith(line, "};")) {
+		// 					mode = ParseRegular;
+		// 				}
+		// 				break;
+		// 			}
+		// 			case ParseMethod: {
+		// 				if (line.find('{') != std::string::npos) ++brackets;
+		// 				if (line.find('}') != std::string::npos) --brackets;
+		// 				if (brackets > 0) {
+		// 					currentBody += line + " ";
+		// 				}
+		// 				else {
+		// 					if (currentFunction->body == "") {
+		// 						currentFunction->body = currentBody;
+		// 					}
+		// 					else if (currentFunction->body != currentBody) {
+		// 						currentFunction->body = currentBody;
+
+		// 						Isolate::Scope isolate_scope(isolate);
+		// 						HandleScope handle_scope(isolate);
+		// 						v8::Local<v8::Context> context = v8::Local<v8::Context>::New(isolate, globalContext);
+		// 						Context::Scope context_scope(context);
+
+		// 						// BlocksFromHeaven.prototype.loadingFinished = new Function([a, b], "lots of text;");
+		// 						std::string script;
+		// 						script += currentClass->internal_name;
+		// 						script += ".prototype.";
+		// 						script += currentFunction->name;
+		// 						script += " = new Function([";
+		// 						for (size_t i = 0; i < currentFunction->parameters.size(); ++i) {
+		// 							script += "\"" + currentFunction->parameters[i] + "\"";
+		// 							if (i < currentFunction->parameters.size() - 1) script += ",";
+		// 						}
+		// 						script += "], \"";
+		// 						script += currentFunction->body;
+		// 						script += "\");";
+
+		// 						// Kore::log(Kore::Info, "Script:\n%s\n", script.c_str());
+		// 						Kore::log(Kore::Info, "Patching method %s in class %s.", currentFunction->name.c_str(), currentClass->name.c_str());
+
+		// 						Local<String> source = String::NewFromUtf8(isolate, script.c_str(), NewStringType::kNormal).ToLocalChecked();
+
+		// 						TryCatch try_catch(isolate);
+
+		// 						Local<Script> compiled_script;
+		// 						if (!Script::Compile(context, source).ToLocal(&compiled_script)) {
+		// 							v8::String::Utf8Value stack_trace(try_catch.StackTrace());
+		// 							Kore::log(Kore::Error, "Trace: %s", *stack_trace);
+		// 						}
+
+		// 						Local<Value> result;
+		// 						if (!compiled_script->Run(context).ToLocal(&result)) {
+		// 							v8::String::Utf8Value stack_trace(try_catch.StackTrace());
+		// 							Kore::log(Kore::Error, "Trace: %s", *stack_trace);
+		// 						}
+		// 					}
+		// 					mode = ParseMethods;
+		// 				}
+		// 				break;
+		// 			}
+		// 		}
+		// 	}
+		// 	Kore::log(Kore::Info, "%i new types found.", types);
 	}
 }
 
@@ -1687,7 +1691,7 @@ int armory_operator_updated;
 bool armory_started = false;
 
 void armoryNew() {
-	
+
 }
 
 bool first = true;
@@ -1698,8 +1702,8 @@ void filesLocationChanged() {
 	Kore::setFilesLocation(armory_url);
 }
 
-void armoryShow(int x, int y, int w, int h) {	
-	
+void armoryShow(int x, int y, int w, int h) {
+
 #ifdef SYS_LINUX
 	const char *path = NULL;
 	path = br_find_exe_dir(NULL);
@@ -1708,8 +1712,21 @@ void armoryShow(int x, int y, int w, int h) {
 		free((void *)path);
 	}
 #endif
+#ifdef SYS_WINDOWS
+	HMODULE hModule = GetModuleHandleW(NULL);
+	WCHAR wpath[MAX_PATH];
+	GetModuleFileNameW(hModule, wpath, MAX_PATH);
+	char cpath[512];
+	sprintf(cpath, "%ws", wpath);
+	cpath[strlen(cpath) - 12] = '\0'; // Strip /blender.exe
+	_chdir(cpath);
+#endif
 
-    std::ifstream f(armory_url);
+	// Check for krom.js
+	char armpath[512];
+	strcpy(armpath, armory_url);
+	strcat(armpath, "/krom.js");
+	std::ifstream f(armpath);
 	if (!f.good()) {
 		good = false;
 		return;
@@ -1722,7 +1739,7 @@ void armoryShow(int x, int y, int w, int h) {
 		// assetsdir = armory_url;
 		// shadersdir = armory_url + "-resources";
 		// kromjs = assetsdir + "/krom.js";
-		
+
 		Kore::System::setName("Krom");
 		Kore::System::setup();
 		Kore::WindowOptions options;
