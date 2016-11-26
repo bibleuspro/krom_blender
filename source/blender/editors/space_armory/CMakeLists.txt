@@ -217,6 +217,7 @@ set(SRC
 
 add_definitions(-DSYS_WINDOWS)
 add_definitions(-D_WINSOCK_DEPRECATED_NO_WARNINGS)
+add_definitions(-DOPENGL)
  
 blender_add_lib(bf_editor_space_armory "${SRC}" "${INC}" "${INC_SYS}")
 

@@ -160,21 +160,24 @@ void armory_GPU_buffers_unbind(void)
 int lastmx = -1, lastmy = -1;
 int pressed = 0;
 
-static void handleEvent(int mx, int my, int etype, int eval) {
+static void handleEvent(int mx, int my, int etype, int eval, bool prev) {
 
-    if (etype == LEFTMOUSE || etype == RIGHTMOUSE) {
-		int button = etype == LEFTMOUSE ? 0 : 1;
-		if (eval == KM_PRESS && pressed == 0) {
-			pressed = 1;
-			armoryMousePress(button, mx, my);	
+	// Fix handling multiple events at once
+	if (!prev) {
+	    if (etype == LEFTMOUSE || etype == RIGHTMOUSE) {
+			int button = etype == LEFTMOUSE ? 0 : 1;
+			if (eval == KM_PRESS && pressed == 0) {
+				pressed = 1;
+				armoryMousePress(button, mx, my);	
+			}
+			else if (eval == KM_RELEASE && pressed == 1) {
+				pressed = 0;
+				armoryMouseRelease(button, mx, my);
+			}
 		}
-		else if (eval == KM_RELEASE && pressed == 1) {
-			pressed = 0;
-			armoryMouseRelease(button, mx, my);
+		if (mx != lastmx || my != lastmy) {
+			armoryMouseMove(mx, my);
 		}
-	}
-	if (mx != lastmx || my != lastmy) {
-		armoryMouseMove(mx, my);
 	}
 	
 	// wm_event_types.h
@@ -224,11 +227,11 @@ static void armory_main_area_draw(const bContext *C, ARegion *ar)
         // Prev event unhandled, > 2 events per frame still get unhandled
 		if (lastetype != -1 && lasteval != -1) {
 			if (event->prevtype != lastetype || event->prevval != lasteval) {
-				handleEvent(mx, my, event->prevtype, event->prevval);
+				handleEvent(mx, my, event->prevtype, event->prevval, true);
 			}
 		}
 
-		handleEvent(mx, my, event->type, event->val);
+		handleEvent(mx, my, event->type, event->val, false);
 	}
 
 	lastetype = event->type;

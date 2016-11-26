@@ -215,6 +215,7 @@ set(SRC
 )
 
 add_definitions(-DSYS_OSX)
+add_definitions(-DOPENGL)
  
 blender_add_lib(bf_editor_space_armory "${SRC}" "${INC}" "${INC_SYS}")
 
