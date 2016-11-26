@@ -138,6 +138,7 @@ void armory_GPU_buffers_unbind(void)
 
 	glUseProgram(0);
 	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
 	glDisable(GL_BLEND);
 
 #ifndef SYS_OSX // Blender limited to opengl 2.1 on macos
