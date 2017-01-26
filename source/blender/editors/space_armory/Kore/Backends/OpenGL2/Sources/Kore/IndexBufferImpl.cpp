@@ -39,6 +39,7 @@ void IndexBuffer::unlock() {
 	glCheckErrors();
 #else
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, myCount * 4, data, GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	glCheckErrors();
 #endif
 }
